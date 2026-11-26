@@ -8,13 +8,14 @@
 ## world_state.capital（首都信息）
 - type、population、description 在初始化后通常不修改。
 - capital 受保护（$meta.updatable 为 false），直接修改会被忽略。
-- 确有剧情需要（例如战争后人口大幅变化）时，在同一次回复中先解除保护，再修改：
+- 确有剧情需要（例如战争后人口大幅变化）时，在同一个 <VariableEdit> 里解除保护并修改，紧接着再用一个 <VariableEdit> 恢复保护，两块写在同一次回复中：
   <VariableEdit>
-  { "world_state": { "capital": { "$meta": { "updatable": true } } } }
+  { "world_state": { "capital": { "population": 800, "$meta": { "updatable": true } } } }
   </VariableEdit>
   <VariableEdit>
-  { "world_state": { "capital": { "population": 800 } } }
+  { "world_state": { "capital": { "$meta": { "updatable": false } } } }
   </VariableEdit>
+- 不要只解除保护而不恢复，否则之后任何修改都能直接生效。
 
 ## world_state.characters（角色）
 - 键是角色名，例如 world_state.characters.Alex。

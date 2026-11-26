@@ -8,7 +8,7 @@
 
 - **ERA 制卡流程技能**：`.agents/skills/era-character-card/SKILL.md`
 - **ERA 角色卡初始模板**：`初始模板/ERA角色卡/`（用法见其中的 `使用说明.md`）。要制作 ERA 角色卡时，以它为起点，而不是 MVU 版的 `初始模板/角色卡/` 和 `示例/角色卡示例`
-- **ERA 完整使用文档**：`docs/era/`（`01-快速上手.md` … `06-分步更新.md` 与 `docs/era/示例/`）
+- **ERA 完整使用文档**：`docs/era/`（`01-快速上手.md` … `07-常见问题与排错.md` 与 `docs/era/示例/`）
 - **ERA 前端工具库**：`util/era.ts`（代码中直接 `import { defineEraDataStore, ... } from '@util/era'`）
 - **ERA 全局类型定义**：根目录 `exported.era.d.ts`（**注意**：不要移入 `@types/`，因为 `bump_deps.yaml` 会定期清空重建 `@types/`）
 

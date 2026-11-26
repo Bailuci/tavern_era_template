@@ -1,6 +1,6 @@
 ---
 name: era-character-card
-description: 用 ERA 变量框架（ERA-Heron，ERA 维护版）制作或改造一张角色卡的规范流程：设计变量、写 zod 变量结构、开场白初始化、世界书规则、隐藏正则、状态栏与前端、可选的分步更新与钩子、测试与交付检查。当用户提到 ERA、ERA 变量、<VariableInsert>/<VariableEdit>/<VariablePatch>、era:writeDone 或 Era.* 接口，要做或改一张 ERA 角色卡时使用。
+description: 用 ERA 变量框架（ERA-Heron，基于 ERA 二次开发）制作或改造一张角色卡的规范流程：设计变量、写 zod 变量结构、开场白初始化、世界书规则、隐藏正则、状态栏与前端、可选的分步更新与钩子、测试与交付检查。当用户提到 ERA、ERA 变量、<VariableInsert>/<VariableEdit>/<VariablePatch>、era:writeDone 或 Era.* 接口，要做或改一张 ERA 角色卡时使用。
 ---
 
 # 用 ERA 制作角色卡
@@ -13,15 +13,16 @@ ERA 的工作方式：AI 在回复末尾输出指令块（`<VariableInsert>` 等
 
 | 内容 | 位置 |
 | --- | --- |
-| 作者向的完整步骤 | `doc/01-快速上手.md` |
-| 指令的完整用法（Insert / Edit / Delete / Patch、`$meta`、`$template`） | `doc/02-指令手册.md` |
-| 状态栏 | `doc/03-状态栏.md` |
-| 宏 `{{ERA:…}}`、`{{ERA-schema}}` | `doc/04-宏.md` |
-| 事件、全局接口 `Era`、钩子、变量结构、全部脚本设置 | `doc/05-接口与设置.md` |
-| 分步更新（额外模型） | `doc/06-分步更新.md` |
-| 可复制的示例（含变量结构与钩子脚本） | `doc/示例/` |
-| 前端读写工具与类型声明 | `开发工具/era.ts`、`开发工具/exported.era.d.ts` |
-| 规则条目的原文 | `src/ERA变量框架/initer/manual/worldbook_entries/era_var_operation_rule.txt` |
+| 作者向的完整步骤 | `docs/era/01-快速上手.md` |
+| 指令的完整用法（Insert / Edit / Delete / Patch、`$meta`、`$template`） | `docs/era/02-指令手册.md` |
+| 状态栏 | `docs/era/03-状态栏.md` |
+| 宏 `{{ERA:…}}`、`{{ERA-schema}}` | `docs/era/04-宏.md` |
+| 事件、全局接口 `Era`、钩子、变量结构、全部脚本设置 | `docs/era/05-接口与设置.md` |
+| 分步更新（额外模型） | `docs/era/06-分步更新.md` |
+| 可复制的示例（含变量结构与钩子脚本） | `docs/era/示例/` |
+| 前端读写工具与类型声明 | `util/era.ts`（`@util/era`）、根目录 `exported.era.d.ts` |
+| 规则条目的原文 | `初始模板/ERA角色卡/新建为src文件夹中的文件夹/世界书/ERA/变量操作规则.txt`（来自 ERA-Heron 的 `src/ERA变量框架/initer/manual/worldbook_entries/era_var_operation_rule.txt`） |
+| 开箱即用的 ERA 角色卡骨架 | `初始模板/ERA角色卡/`（用法见其中的 `使用说明.md`） |
 
 ## 第 0 步：确认需求
 
@@ -82,8 +83,9 @@ export const Schema = z.object({
 - **不要用 `z.coerce.number()`**：它会把 `null`、空字符串、`true` 变成 0 或 1，掩盖 AI 的错误。
 - schema 必须幂等：`parse(parse(x))` 等于 `parse(x)`，因为同一条消息会被重算多次。
 - 注册方式二选一：
-  - 酒馆助手**角色卡脚本**里直接写：`await waitGlobalInitialized('Era'); const off = Era.registerSchema(Schema); $(window).on('pagehide', off);`
-  - 在本项目模板里：`import { registerEraSchema } from '@util/era'; $(() => errorCatched(registerEraSchema)(Schema));`（它会处理 ERA 晚加载、脚本重载等情况）。
+  - 酒馆助手**角色卡脚本**里直接写：`await waitGlobalInitialized('Era'); const off = Era.registerSchema(Schema); $(window).on('pagehide', off);`。ERA 脚本被重新启用或更新后 schema 会丢失，需要重新加载角色卡脚本。
+  - 用酒馆助手前端模板（vue + pinia）的项目：本母版已内置 `util/era.ts` 与根目录的 `exported.era.d.ts`（不要移进 `@types/`，`bump_deps` 会清空它），直接 `import { registerEraSchema } from '@util/era'; $(() => errorCatched(registerEraSchema)(Schema));`（它会处理 ERA 晚加载、ERA 重载后补注册、脚本卸载）。**推荐。**
+- 注册后在控制台执行 `Era.hasSchema()` 确认为 `true`；schema 无效时 ERA 会弹窗“变量结构注册失败”。
 - 不在开场白里初始化、完全靠默认值的卡，注册时传 `{ fillDefaultsOnEmpty: true }`。
 
 **完成标准**：把第 1 步的初始值 JSON 交给 `Schema.parse`，不报错且结果与原值一致。
@@ -100,16 +102,16 @@ export const Schema = z.object({
 ```
 
 - 所有变量在开场白里一次初始化完。之后的消息里对已存在的路径用 `<VariableInsert>` 会被忽略。
-- 需要统一结构的集合，可以在父节点上放 `$template`（新插入的元素自动补全字段）；需要保护的节点放 `$meta`。用法见 `doc/02-指令手册.md`。
+- 需要统一结构的集合，可以在父节点上放 `$template`（新插入的元素自动补全字段）；需要保护的节点放 `$meta`。用法见 `docs/era/02-指令手册.md`。
 - 改了开场白之后，要**新开聊天**才会生效。
 
 **完成标准**：新开聊天后，ERA 面板里的变量与初始值一致，没有报错提示。
 
 ## 第 4 步：世界书规则
 
-1. 在角色卡上导入并启用 ERA 脚本（`artifact/bundle.js` 的内容作为酒馆助手角色脚本），在角色卡设置里**开启局部正则**，打开 ERA 悬浮球面板，点“**ERA 快速初始化**”。它会：
+1. 在角色卡上导入并启用 ERA 脚本（酒馆助手角色脚本，内容为 `import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v1.6.0/artifact/bundle.js';`），在角色卡设置里**开启局部正则**，打开 ERA 面板（点悬浮球，或酒馆扩展菜单 → “ERA 面板”），在“工具”页点“**ERA 快速初始化**”（以 `初始模板/ERA角色卡/` 为起点时，`index.yaml` 已经写好 ERA 脚本、这两个条目和五条正则，不用再点）。它会：
    - 在角色主世界书里建两个条目：`ERA 变量操作规则`（教 AI 指令格式，一般不改）和 `ERA 变量意图说明`（由你填写）；
-   - 在角色卡局部正则里建 `ERA 数据隐藏正则`、`ERA 元数据隐藏正则`、`ERA 思考块隐藏正则`、`ERA 状态栏模板`。
+   - 在角色卡局部正则里建 `ERA 数据隐藏正则`、`ERA 元数据隐藏正则`、`ERA 思考块隐藏正则`、`ERA 状态栏模板`、`ERA 状态栏占位符隐藏正则`（只作用于提示词，去掉 `<StatusPlaceHolderImpl/>`）。
    - 已有的卡用“**更新旧卡的规则**”把规则条目和隐藏正则更新到当前版本（会备份原内容）。
 2. 填写 `ERA 变量意图说明`（名字中间有一个空格，不能改）。快速初始化生成的条目已经是下面的骨架，把 `<变量说明>` 里的占位行换成真实内容；`<变量结构>` 和 `<当前变量>` 两段必须保留——随 AI 输出时，ERA 不会自动把变量和结构发给 AI，全靠这两个宏。旧卡的这个条目要手动补上这两段。
 
@@ -146,11 +148,12 @@ export const Schema = z.object({
 
 按需求选一种：
 
-- **楼层 HTML 状态栏（最简单）**：开启脚本设置 `在ai消息尾部生成特殊符号`，在 `ERA 状态栏模板` 正则里写 HTML。读变量用 `{{ERA:路径}}` 宏时，需要开启 `强制重载功能`；更好的做法是在 HTML 的脚本里监听 `era:writeDone`，见 `doc/03-状态栏.md` 和 `doc/示例/`。
-- **酒馆助手前端界面（vue）**：用 `开发工具/era.ts` 的 `defineEraDataStore(Schema)` 得到只读、已校验的最新变量 `data`。
-- 前端**写变量**：用 `await Era.commit([...], { atomic: true })`，失败时 Promise 会说明原因（例如金币不足被 schema 拒绝）。频繁写入（滑块等）时开启脚本设置 `API写入不修改消息`，并做防抖。
+- **楼层 HTML 状态栏（最简单）**：开启脚本设置 `在ai消息尾部生成特殊符号`，在 `ERA 状态栏模板` 正则里写 HTML。读变量用 `{{ERA:路径}}` 宏时，需要开启 `强制重载功能`；更好的做法是在 HTML 的脚本里监听 `era:writeDone`，见 `docs/era/03-状态栏.md` 和 `docs/era/示例/`。
+- **酒馆助手前端界面（vue）**：用 `util/era.ts`（`@util/era`）的 `defineEraDataStore(Schema)` 得到只读、已校验的最新变量 `data`。
+- **楼层里的状态栏**默认每一楼都显示最新变量。想让旧楼显示“那一楼当时”的值，用 `defineEraFloorStore(Schema)` 或 `await Era.getVarsAt(getCurrentMessageId())`（每次 `era:writeDone` 后重新读取）；只想在最新一楼显示完整状态栏，用 `isLatestFloor()` 判断。见 `docs/era/05-接口与设置.md` 第 9 节。
+- 前端**写变量**：用 store 的 `commit` / `patch`，或直接 `await Era.commit([...], { atomic: true })`，失败时 Promise 会说明原因（例如金币不足被 schema 拒绝）。store 的 `update` / `insert` / `remove` 只为兼容旧版保留，拿不到结果，新代码不要用。频繁写入（滑块等）请做防抖。
 - 前端自己发消息（`/send`、`/trigger`）之前先 `await Era.extra.wait()`，否则开启分步更新时，下一次生成可能还看不到最新变量。
-- 想显示“变量更新中”，监听 `era:extraStatus`。
+- 想显示“变量更新中”，监听 `era:extraStatus`；界面加载时先用 `Era.extra.status().running` 恢复，免得错过已经发出的 `started`。
 
 **完成标准**：状态栏和界面在发送、滑动、删除消息后都显示正确的值。
 
@@ -166,7 +169,9 @@ const off = Era.onAfterApply('卡名.时间进位', ({ stat, old_stat, random })
 $(window).on('pagehide', off);
 ```
 
-钩子必须同步、只依赖 `ctx`（随机数用 `ctx.random()`），不能在钩子里再发写入事件，不要在楼层界面或 `era:writeDone` 里注册。完整规则见 `doc/05-接口与设置.md`，可复制的完整脚本见 `doc/示例/变量结构与钩子脚本示例.js`。
+用前端模板的项目推荐 `import { registerEraHook } from '@util/era'; registerEraHook('after', '卡名.时间进位', ctx => { … });`：它会等待 ERA 加载，ERA 重载后自动补注册，脚本卸载时自动注销。直接调用 `Era.onAfterApply` 时，ERA 脚本被重新启用或更新后钩子会丢失，需要重新加载角色卡脚本。
+
+钩子必须同步、只依赖 `ctx`（随机数用 `ctx.random()`），不能在钩子里再发写入事件，不要在楼层界面或 `era:writeDone` 里注册。注册后在控制台执行 `Era.hasHook('卡名.时间进位')` 确认为 `true`。完整规则见 `docs/era/05-接口与设置.md`，可复制的完整脚本见 `docs/era/示例/变量结构与钩子脚本示例.js`。
 
 ## 第 7 步（可选）：分步更新
 
@@ -174,21 +179,26 @@ $(window).on('pagehide', off);
 
 1. 给只发给更新模型的条目名字加 `[era_update]`（`ERA 变量操作规则`、`ERA 变量意图说明` 自动视为这类），两边都要看的设定加 `[era_both]`，变量很多时用 `[era_update:组名]` 分组并行。
 2. 确认没有其他条目或预设要求剧情模型输出指令（见第 4 步）。
-3. 玩家在 ERA 面板的“分步更新（额外模型）”里开启并选择接口。这是玩家本机的设置，不随卡导出；卡里只需要做好条目标记，不开启时照常工作。
+3. 玩家在 ERA 面板的“分步更新”页里开启并选择接口。这是玩家本机的设置，不随卡导出；卡里只需要做好条目标记，不开启时照常工作。
+4. 专为分步更新设计的卡，可以在角色卡变量 `ERA分步更新` 里推荐开启（如 `{ 变量更新方式: '额外模型解析', 重试次数: 2 }`），随卡导出；玩家“变量更新方式”为“跟随角色卡”（默认）时采用。接口和密钥不能推荐。
 
-详见 `doc/06-分步更新.md`。
+详见 `docs/era/06-分步更新.md`。
 
 ## 第 8 步：脚本设置建议
 
 | 设置 | 建议 |
 | --- | --- |
 | `数组内保留对象` | 新卡建议开启；**发布前定好，之后不要改**（会改变重算结果） |
-| `宽松解析` | 开启（默认），修复 AI 写坏的 JSON |
+| `宽松解析` | 开启（默认），修复 AI 写坏的 JSON；发布前定好，之后不要改 |
+| `繁体转简体` | AI 常输出繁体时开启；发布前定好，之后不要改 |
 | `指令失败提示` | 制卡调试时开启，看到哪条指令没生效、为什么 |
-| `下划线只读` | 用了 `_` 开头的只读字段时开启 |
-| `日志保留楼层数` | 预计聊天很长时设为 20~50，聊天文件更小 |
+| `调试模式` | 制卡调试时开启，ERA 的警告和错误会弹窗显示 |
+| `下划线只读` | 用了 `_` 开头的只读字段时开启；发布前定好，之后不要改 |
+| `日志保留楼层数` | 预计聊天很长（几百楼以上）时设为 50~100，聊天文件更小；越小，能直接回滚、查询的旧楼越少 |
 | `折叠日志存档` | 配合上一项，需要回看旧楼快照时开启 |
-| `API写入不修改消息` | 前端频繁写变量时开启 |
+| `API写入不修改消息` | 前端用写入事件（而不是 `Era.commit`）频繁写变量时开启 |
+
+“发布前定好”的几项：ERA 重算历史楼层时按**当前**设置执行，中途修改会让已有聊天的变量在下一次重算时变化。
 
 ## 第 9 步：测试
 
@@ -199,15 +209,16 @@ $(window).on('pagehide', off);
 - [ ] 故意让 AI 写错（越界数值、不存在的选项）：被拦下并提示，变量不被破坏。
 - [ ] 滑动到另一个回复、再滑回来：变量随之切换、恢复。
 - [ ] 删除最后几楼、编辑中间一楼：变量回到正确状态。
-- [ ] ERA 面板“完全重算变量”：结果与重算前一致。
-- [ ] 状态栏和前端在以上操作后都显示正确。
+- [ ] ERA 面板“工具 → 完全重算”：结果与重算前一致。
+- [ ] 状态栏和前端在以上操作后都显示正确；楼层状态栏按设计显示最新值或那一楼当时的值。
+- [ ] 在酒馆助手脚本库里关闭再开启 ERA 脚本、再发一条消息后，`Era.hasSchema()`、`Era.hasHook(…)` 仍为 `true`（用 `registerEraSchema` / `registerEraHook` 时会自动补注册，否则需要重新加载角色卡脚本）。
 - [ ] 开启分步更新的卡：剧情回复里没有指令，更新模型的结果写回对应楼层。
 
 ## 交付清单
 
 - 开场白（含所有备选）里有完整的 `<VariableInsert>`。
 - 角色主世界书里有填写好的 `ERA 变量意图说明`，`ERA 变量操作规则` 是最新版。
-- 局部正则齐全（快速初始化生成的四条）。
+- 局部正则齐全（快速初始化生成的五条）。
 - ERA 脚本、变量结构脚本（如有）、其他脚本都在角色卡上并已启用；脚本设置按第 8 步调好。
 - 第 9 步全部通过。
 

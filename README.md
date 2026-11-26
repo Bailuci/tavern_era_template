@@ -1,6 +1,6 @@
 # tavern_era_template
 
-基于 [StageDog/tavern_helper_template](https://github.com/StageDog/tavern_helper_template) 定制的 **ERA 角色卡 / 酒馆助手前端与脚本制卡母版**，内置 [ERA-Heron](https://github.com/Bailuci/ERA-Heron) 制卡工具、类型定义、文档与 AI 技能。
+基于 [StageDog/tavern_helper_template](https://github.com/StageDog/tavern_helper_template) 定制的 **ERA 角色卡 / 酒馆助手前端与脚本制卡母版**，内置 [ERA-Heron](https://github.com/Bailuci/ERA-Heron)（基于 ERA 变量框架二次开发，作者白鹭辞（Bailuci））制卡工具、类型定义、文档与 AI 技能。
 
 ## 自动更新链（二级模板同步）
 
@@ -22,7 +22,7 @@ Bailuci/tavern_era_template（本母版）
 - `util/era.ts`：前端状态栏/脚本用的 ERA 数据 Store 工具（`@util/era`）
 - `exported.era.d.ts`：ERA 全局类型声明（置于根目录以躲开 `bump_deps.yaml` 对 `@types/` 的定期重建）
 - `.agents/skills/era-character-card/`：供 AI 助手读取的 ERA 制卡流程技能
-- `docs/era/`：ERA-Heron 文档（01~06 与示例）
+- `docs/era/`：ERA-Heron 文档（01~07 与示例）
 - `初始模板/ERA角色卡/`：开箱即用的 ERA 角色卡骨架（世界书规则与意图说明、ERA 正则、变量结构脚本、状态栏），复制到 `src/` 即可，用法见其中的 `使用说明.md`
 
 ## 常用命令
