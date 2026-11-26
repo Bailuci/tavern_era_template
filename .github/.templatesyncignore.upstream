@@ -1,0 +1,13 @@
+.github/workflows
+.github/.templatesyncignore
+.github/.templatesyncignore.upstream
+@types
+dist
+README.md
+CLAUDE.md
+GEMINI.md
+exported.era.d.ts
+util/era.ts
+docs/era
+.agents/skills/era-character-card
+初始模板/ERA角色卡

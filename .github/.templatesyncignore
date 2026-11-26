@@ -1,0 +1,8 @@
+.github/workflows
+.github/.templatesyncignore.upstream
+@types
+dist
+src
+资料
+tavern_sync.yaml
+README.md

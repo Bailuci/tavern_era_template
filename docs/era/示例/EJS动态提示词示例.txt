@@ -1,0 +1,52 @@
+{{// ERA 示例：在世界书条目中用 EJS 模板按变量生成不同的提示词。所属文档：doc/04-宏.md “需要条件判断时：EJS” //}}
+{{// 前提：安装并启用酒馆的“提示词模板”扩展。变量结构与 doc/02-指令手册.md “综合示例”中初始化的 world_state 相同。 //}}
+{{// 只需要输出变量的值时，用 ERA 宏更简单；EJS 用于条件判断、循环等逻辑。 //}}
+{{// 注意 1：ERA 的变量存在聊天变量 stat_data 下，EJS 用 getvar 读到的是原始存储：文本中的点号、引号会被转义成 __DOT__、__DQUOTE__、__SQUOTE__，并含有 $meta 等字段。数字和布尔值不受影响。 //}}
+{{// 注意 2：开启分步更新时，发给更新模型的条目里的 EJS 不会执行，那类条目请只用 ERA 宏。 //}}
+{{// 注意 3：注释里不要写 EJS 标签或两个连续的右花括号。 //}}
+# 动态情报
+
+{{// 下面把全部逻辑包在一个立即调用的异步函数里，形成局部作用域，避免变量互相影响。 //}}
+<%= await (async () => {
+  try {
+    let output = '<capital_dynamic_report>\n  capital_status:\n';
+    const population = getvar('stat_data.world_state.capital.population', { scope: 'local' });
+
+    if (typeof population === 'number') {
+      if (population >= 1000) {
+        output += '    - 首都人口已达 ' + population + '，是一个繁荣的大都会。商业活动频繁，文化交流兴盛。';
+      } else if (population >= 500) {
+        output += '    - 首都人口为 ' + population + '，规模可观，是一个重要的区域中心。';
+      } else {
+        output += '    - 首都当前人口为 ' + population + '，是一个宁静的小型城市，充满发展潜力。';
+      }
+    } else {
+      output += '    - 无法获取准确的人口数据。';
+    }
+
+    output += '\n</capital_dynamic_report>';
+    return output;
+  } catch (e) {
+    return '[EJS 脚本错误 (动态情报)]: ' + (e?.message || e);
+  }
+})() %>
+
+# 角色列表
+
+{{// 遍历 world_state.characters，跳过 $template 等以 $ 开头的键。角色名中含有点号时，读到的键名会是转义后的形式。 //}}
+<%= await (async () => {
+  try {
+    const characters = getvar('stat_data.world_state.characters', { scope: 'local', clone: true }) || {};
+    const lines = Object.entries(characters)
+      .filter(([name]) => !name.startsWith('$'))
+      .map(([name, c]) => '- ' + name + '：等级 ' + c.level + '，生命 ' + c.hp);
+    return lines.length > 0 ? lines.join('\n') : '- 目前没有其他角色。';
+  } catch (e) {
+    return '[EJS 脚本错误 (角色列表)]: ' + (e?.message || e);
+  }
+})() %>
+
+# 完整的世界状态
+
+{{// 需要整段数据时，用 ERA 宏，它会去掉 $ 字段并还原转义的字符。 //}}
+{{ERA:world_state}}

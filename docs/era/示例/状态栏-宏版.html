@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!--
+  ERA 示例：用 ERA 宏读取变量的状态栏。所属文档：doc/03-状态栏.md、doc/04-宏.md
+  变量路径对应 doc/04-宏.md 步骤 1 的开场白（player_status.*、game_info.*）。
+
+  用法：把整个文件放进 html 代码块（首行写三个反引号加 html，末行写三个反引号），
+        填进角色卡局部正则“ERA 状态栏模板”的“替换为”。
+  限制：宏只替换普通文字，不替换 <style>、<script> 和标签属性；
+        要让数值随变量刷新，需要开启脚本设置“强制重载功能”（重新渲染时会闪一下）。
+        需要稳定刷新时，请改用 状态栏-事件版.html。
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>状态栏</title>
+  <style>
+    body {
+      /* 使用系统字体，不依赖外部字体服务 */
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: transparent; /* 确保背景透明，以便融入酒馆UI */
+    }
+
+    .era-statusbar {
+      color: #E0E0E0;
+      background: linear-gradient(145deg, #2c3e50, #34495e);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      border: 1px solid #4a6278;
+      overflow: hidden; /* 确保子元素不会溢出圆角 */
+    }
+
+    .era-statusbar-header {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #4a6278;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .era-statusbar-header h4 {
+      margin: 0;
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #1abc9c; /* 高亮标题颜色 */
+      text-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
+    }
+
+    .era-statusbar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .era-statusbar-item {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .era-statusbar-item-label {
+      font-size: 0.85em;
+      color: #bdc3c7;
+      margin-bottom: 4px;
+    }
+
+    .era-statusbar-item-value {
+      font-size: 1em;
+      font-weight: 700;
+      color: #ecf0f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="era-statusbar">
+    <div class="era-statusbar-header">
+      <h4>角色状态</h4>
+    </div>
+    <div class="era-statusbar-grid">
+      <div class="era-statusbar-item">
+        <div class="era-statusbar-item-label">姓名</div>
+        <div class="era-statusbar-item-value">{{ERA:player_status.name}} Lv.{{ERA:player_status.level}}</div>
+      </div>
+      <div class="era-statusbar-item">
+        <div class="era-statusbar-item-label">生命值</div>
+        <div class="era-statusbar-item-value">{{ERA:player_status.hp}} / {{ERA:player_status.max_hp}}</div>
+      </div>
+      <div class="era-statusbar-item">
+        <div class="era-statusbar-item-label">魔力值</div>
+        <div class="era-statusbar-item-value">{{ERA:player_status.mp}} / {{ERA:player_status.max_mp}}</div>
+      </div>
+      <div class="era-statusbar-item">
+        <div class="era-statusbar-item-label">时间与天气</div>
+        <div class="era-statusbar-item-value">第 {{ERA:game_info.day}} 天 {{ERA:game_info.hour}} 时 · {{ERA:game_info.weather}}</div>
+      </div>
+      <!-- 在这里按同样的格式添加更多状态项，路径要与开场白中的变量一致 -->
+    </div>
+  </div>
+</body>
+</html>

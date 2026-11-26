@@ -1,0 +1,49 @@
+name: sync_template
+
+on:
+  schedule:
+    - cron: 0 3 * * *
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  repository-projects: read
+
+jobs:
+  # 第一级同步：母版仓（Bailuci/tavern_era_template）从青空莉官方总模板同步更新
+  sync_from_upstream_template:
+    if: github.repository == 'Bailuci/tavern_era_template'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: AndreasAugustin/actions-template-sync@v2
+        with:
+          source_repo_path: StageDog/tavern_helper_template
+          pr_title: '[bot] 同步青空莉上游模板更新'
+          pr_commit_msg: '[bot] bump StageDog/tavern_helper_template update'
+          is_pr_cleanup: true
+          template_sync_ignore_file_path: .github/.templatesyncignore.upstream
+          is_force_deletion: true
+          git_remote_pull_params: --allow-unrelated-histories --strategy=recursive --no-edit -X diff-algorithm=minimal -X ignore-all-space -X patience -X renormalize
+
+  # 第二级同步：派生角色卡/工具仓从 Bailuci/tavern_era_template 同步更新（同时包含上游模板 + ERA 工具/文档更新）
+  sync_from_era_template:
+    if: github.repository != 'StageDog/tavern_helper_template' && github.repository != 'Bailuci/tavern_era_template'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: AndreasAugustin/actions-template-sync@v2
+        with:
+          source_repo_path: Bailuci/tavern_era_template
+          pr_title: '[bot] 同步 ERA 制卡模板更新'
+          pr_commit_msg: '[bot] bump Bailuci/tavern_era_template update'
+          is_pr_cleanup: true
+          template_sync_ignore_file_path: .github/.templatesyncignore
+          is_force_deletion: true
+          git_remote_pull_params: --allow-unrelated-histories --strategy=recursive --no-edit -X diff-algorithm=minimal -X ignore-all-space -X patience -X renormalize
