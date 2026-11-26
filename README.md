@@ -23,6 +23,7 @@ Bailuci/tavern_era_template（本母版）
 - `exported.era.d.ts`：ERA 全局类型声明（置于根目录以躲开 `bump_deps.yaml` 对 `@types/` 的定期重建）
 - `.agents/skills/era-character-card/`：供 AI 助手读取的 ERA 制卡流程技能
 - `docs/era/`：ERA-Heron 文档（01~06 与示例）
+- `初始模板/ERA角色卡/`：开箱即用的 ERA 角色卡骨架（世界书规则与意图说明、ERA 正则、变量结构脚本、状态栏），复制到 `src/` 即可，用法见其中的 `使用说明.md`
 
 ## 常用命令
 
@@ -33,3 +34,5 @@ pnpm build     # 全量生产构建
 pnpm dump      # 生成 schema.json
 pnpm sync      # 手动运行 tavern_sync
 ```
+
+> Node 需要 22.18 及以上（`webpack.config.ts` 是 ESM TypeScript，靠 Node 自带的类型擦除加载）。如果只能用 22.6~22.17，先设置环境变量 `NODE_OPTIONS=--experimental-strip-types` 再运行 `pnpm build` / `pnpm watch`。

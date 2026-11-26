@@ -1,0 +1,131 @@
+# yaml-language-server: $schema=https://testingcf.jsdelivr.net/gh/StageDog/tavern_sync/dist/schema/character.zh.json
+# ERA 角色卡的 tavern_sync 配置. 同步脚本不是必须使用, 但可以让角色卡完全自动更新:
+# https://stagedog.github.io/青空莉/工具经验/实时编写角色卡、世界书或预设/
+#
+# 复制到 src/ 后请替换:
+# - `角色卡名称`: 改成你在 src/ 下的文件夹名
+# - `GitHub用户名/仓库名`: 改成你的角色卡仓库, 状态栏与变量结构脚本从它的 dist/ 加载
+#
+# 世界书条目与 5 条正则与 ERA 面板“ERA 快速初始化”生成的同名, 因此不需要再点快速初始化.
+# ERA 更新规则后, 用 ERA-Heron 的 src/ERA变量框架/initer/manual/worldbook_entries/era_var_operation_rule.txt
+# 覆盖 世界书/ERA/变量操作规则.txt 即可 (或在酒馆里点 ERA 面板的“更新旧卡的规则”).
+头像: null
+版本: ''
+作者: ''
+备注: ''
+
+第一条消息:
+  - 文件: 第一条消息/0
+
+角色描述: ''
+
+锚点:
+  - &ERA条目
+    启用: true
+    激活策略:
+      类型: 蓝灯
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+
+世界书名称: 与角色卡名称相同
+条目:
+  - 文件夹: ERA
+    条目:
+      # 名字必须一字不差 (中间有空格): 开启 ERA 分步更新时, ERA 靠这两个名字识别只发给更新模型的条目
+      - 名称: ERA 变量操作规则
+        <<: *ERA条目
+        插入位置:
+          类型: 指定深度
+          角色: 系统
+          深度: 0
+          顺序: 9999
+        文件: 世界书/ERA/变量操作规则
+
+      - 名称: ERA 变量意图说明
+        <<: *ERA条目
+        插入位置:
+          类型: 指定深度
+          角色: 系统
+          深度: 0
+          顺序: 9998
+        文件: 世界书/ERA/变量意图说明
+
+扩展字段:
+  正则:
+    # 以下 4 条与 ERA 快速初始化生成的正则相同
+    - 正则名称: ERA 数据隐藏正则
+      id: 6c1f7b52-3a0e-4d6b-9a51-0e7d3c2b9a11
+      启用: true
+      查找表达式: '/<(variable(?:insert|edit|delete|patch))>\s*(?=[\s\S]*?\S[\s\S]*?<\/\1>)((?:(?!<(?:era_data|variable(?:think|insert|edit|delete|patch))>|<\/\1>)[\s\S])*?)\s*<\/\1>|<\/?era_extra>/gi'
+      内容: ''
+      来源:
+        用户输入: true
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: true
+      在编辑时运行: true
+
+    - 正则名称: ERA 元数据隐藏正则
+      id: 2b8e4c90-7d3f-4b1a-8e62-5f0a9d1c3e22
+      启用: true
+      查找表达式: '/<era_data>\s*(?=[\s\S]*?\S[\s\S]*?<\/era_data>)((?:(?!<(?:era_data|variable(?:think|insert|edit|delete|patch))>|<\/era_data>)[\s\S])*?)\s*<\/era_data>/gi'
+      内容: ''
+      来源:
+        用户输入: true
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: true
+      在编辑时运行: true
+
+    - 正则名称: ERA 思考块隐藏正则
+      id: 9d4a6e13-1c5b-4f7e-b2a8-3e6f0b7c5d33
+      启用: true
+      查找表达式: '/<variablethink>\s*(?=[\s\S]*?\S[\s\S]*?<\/variablethink>)((?:(?!<variablethink>)[\s\S])*?)\s*<\/variablethink>/gi'
+      内容: ''
+      来源:
+        用户输入: true
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: true
+      在编辑时运行: true
+
+    # ERA 默认在每条 AI 回复末尾生成 <StatusPlaceHolderImpl/>, 这条正则把它换成状态栏界面
+    - 正则名称: ERA 状态栏模板
+      id: 4e7b2d81-6a9c-4e3f-a1d5-8c2f7e0b9a44
+      启用: true
+      查找表达式: /<StatusPlaceHolderImpl\/>/gsi
+      内容: |-
+        ```
+        <body>
+        <script>
+        $('body').load('https://testingcf.jsdelivr.net/gh/GitHub用户名/仓库名/dist/角色卡名称/界面/状态栏/index.html')
+        </script>
+        </body>
+        ```
+      来源:
+        用户输入: false
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: false
+      在编辑时运行: true
+
+  酒馆助手:
+    脚本库:
+      - 名称: ERA-Heron 1.5.0
+        id: 7a3c9e15-2b4d-4f8a-9c61-1d5e8f2a0b55
+        启用: true
+        类型: 脚本
+        内容: |-
+          import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v1.5.0/artifact/bundle.js';
+
+      - 名称: 变量结构
+        id: 3f8d1a62-9c4e-4b7d-8e25-6a0c3f9b1d66
+        启用: true
+        类型: 脚本
+        内容: |-
+          import 'https://testingcf.jsdelivr.net/gh/GitHub用户名/仓库名/dist/角色卡名称/脚本/变量结构/index.js';
