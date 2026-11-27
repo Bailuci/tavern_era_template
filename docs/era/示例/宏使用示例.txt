@@ -1,0 +1,40 @@
+{{// ERA 示例：在世界书条目中使用 ERA 宏。所属文档：docs/era/04-宏.md //}}
+{{// 用法：把本文件内容放进一个世界书条目。变量结构与 docs/era/02-指令手册.md “综合示例”中初始化的 world_state 相同。 //}}
+{{// 这种双斜线开头的是酒馆的注释宏，不会发给 AI。注释里不能出现两个连续的右花括号，否则注释会提前结束。 //}}
+[系统提示：以下是动态生成的世界状态报告，请根据此信息进行回应。]
+
+# 世界状态报告
+
+## 一、游戏概览
+
+*   **当前游戏版本**: `{{ERA:world_state.game_version}}`
+    {{// 最基础的用法：ERA:路径 形式的宏会被替换为该路径的当前值。这里显示 world_state.game_version。 //}}
+    {{// 路径不存在时替换为空。 //}}
+
+## 二、首都信息
+
+我们的故事发生在一个名为 **{{ERA:world_state.capital.type}}** 的宏伟城市。
+
+*   **城市人口**: 目前约有 **{{ERA:world_state.capital.population}}** 名居民。
+*   **城市描述**: {{ERA:world_state.capital.description}}
+
+## 三、角色创建规则
+{{// 路径指向对象或数组时，输出 JSON 文本。 //}}
+{{// $template、$meta 这类以 $ 开头的字段只能用 ERA-withmeta 读取；用 ERA: 读取会得到空。 //}}
+在这个世界中，所有新角色都遵循以下基础模板：
+```json
+{{ERA-withmeta:world_state.characters.$template}}
+```
+
+## 四、完整的世界状态数据
+{{// $ALLDATA 输出全部变量。ERA 会还原内部转义的字符，直接可读。 //}}
+
+### 纯净数据（不含 $ 字段）
+```json
+{{ERA:$ALLDATA}}
+```
+
+### 原始数据（包含 $meta、$template）
+```json
+{{ERA-withmeta:$ALLDATA}}
+```

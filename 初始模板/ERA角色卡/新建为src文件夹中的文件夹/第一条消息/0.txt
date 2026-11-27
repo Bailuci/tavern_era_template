@@ -1,0 +1,30 @@
+这是第一条消息. 把这段换成你的开场白正文.
+
+（下面两行标记之间的 <VariableInsert> 由 `pnpm era-init` 按 initvar.yaml 生成, 不要手改; 每个开场白, 包括备选开场白, 都要保留这两行标记）
+<!-- ERA-INIT:BEGIN -->
+<VariableInsert>
+{
+  "世界": {
+    "时间段": "傍晚",
+    "地点": "家门口"
+  },
+  "角色": {
+    "好感度": 30,
+    "心情": "平静",
+    "背包": {
+      "钥匙": {
+        "数量": 1,
+        "$meta": {
+          "necessary": "self"
+        }
+      },
+      "$template": {
+        "$meta": {
+          "necessary": "self"
+        }
+      }
+    }
+  }
+}
+</VariableInsert>
+<!-- ERA-INIT:END -->

@@ -1,0 +1,91 @@
+<variable_rule>
+# ERA 变量操作规则
+
+- **无变化则不操作**: 当变量信息与故事发展相比没有变化时，禁止生成任何指令块。
+- **新增则 `Insert`**: 当出现全新的角色、物品、状态或信息时，使用 `<VariableInsert>`。
+- **修改则 `Edit`**: 当已有的数据需要更新其值时（如等级提升、状态改变），使用 `<VariableEdit>`。
+- **移除则 `Delete`**: 当数据被明确地消耗、移除或销毁时，使用 `<VariableDelete>`。
+- **结构操作则 `Patch`**: 整体替换对象、增删数组元素、移动或重命名时，使用 `<VariablePatch>`。
+
+## 指令核心规则
+- **`<VariableInsert>`**:
+    - **只增不改**: 用于添加新数据，它绝不会覆盖任何已经存在的数据。
+- **`<VariableEdit>`**:
+    - **只改不增**: 用于修改已存在的数据，它绝不会在不存在的路径上创建新数据。
+    - **增量**: 数字可以写成 `"+=5"`、`"-=5"`、`"*=2"`、`"/=2"`，基于当前值计算。
+    - 值写成对象时，只修改其中写出的已有子键；值是数组时会整体替换原数组，增删数组元素请用 `<VariablePatch>`。
+- **`<VariableDelete>`**:
+    - **删除节点**: 在指令中，使用一个 **空对象 `{}`** 作为值，表示要删除该键对应的整个节点。
+- **只读字段**: 以 `_` 开头的字段不要修改或删除。
+- **类型**: 如果提供了 `<变量结构>`，值必须符合其中的类型；列出了固定取值的字段只能使用那些值，不符合的修改会被丢弃。
+- **`<VariablePatch>`**: 内容是一个操作数组，按顺序执行：
+    - `{ "op": "replace", "path": "/a/b", "value": 新值 }`: 有则整体替换，无则插入
+    - `{ "op": "insert", "path": "/a/新键", "value": 值 }`: 对象中已存在的键会被覆盖，只想新增请用 `<VariableInsert>`；数组末尾用 `"/列表/-"`，指定位置用 `"/列表/0"`
+    - `{ "op": "remove", "path": "/a/b" }`；删除数组元素用 `"/列表/0"`
+    - `{ "op": "delta", "path": "/a/数字", "value": 5 }`；`{ "op": "toggle", "path": "/a/开关" }`；`{ "op": "append", "path": "/a/文本或数组", "value": 内容 }`
+    - `{ "op": "move", "from": "/a/旧", "to": "/a/新" }`；`copy` 同理
+
+</variable_rule>
+
+<format_request>
+你必须根据有关要求及变量现有状态，在正文之后输出 `<VariableThink>`，再输出需要的指令块（`<VariableInsert>`、`<VariableEdit>`、`<VariableDelete>`、`<VariablePatch>`）。
+
+**严格遵守以下流程**:
+
+1.  **输出正文**:
+    -   首先，生成本次回复的正文内容。
+
+2.  **输出思考与指令**:
+    -   在正文内容之后，立即输出 `<VariableThink>` 块，在其中写出意图分析和操作计划。
+    -   在 `<VariableThink>` 块之后，立即输出操作计划所需的指令块。只输出用得到的指令块，不要输出空的指令块；同一种指令块可以出现多次。
+    -   没有变量需要更新时，只输出 `<VariableThink>` 并说明无变化。
+
+3.  **格式要求**:
+    -   所有指令块的内容都必须是 **严格合法** 的 JSON 格式（`<VariablePatch>` 是 JSON 数组）。
+    -   所有 JSON 的键（key）都必须使用双引号 `"`。
+    -   严格遵循 `<variable_rule>` 中定义的所有规则。
+
+最终输出格式为：
+  {其他内容（如正文）和格式}
+
+  <VariableThink>
+  1.  **意图分析**: {变量更新意图}
+  2.  **操作计划**:
+      - {每一项操作及所用的指令}
+  </VariableThink>
+  {按操作计划生成的指令块：<VariableInsert>、<VariableEdit>、<VariableDelete>、<VariablePatch> 中用得到的那些}
+
+### 格式示例
+  {其他内容（如正文）和格式...}
+
+  <VariableThink>
+  1.  **意图分析**: 故事中出现了一个新角色 "Elara"，需要将其添加到 `characters` 对象中。主角 "player" 的 `hp` 减少了 5，并获得了一瓶药水。
+  2.  **操作计划**:
+      -   `<VariableInsert>`: 添加新角色 "Elara"。
+      -   `<VariableEdit>`: "player" 的 `hp` 减少 5。
+      -   `<VariablePatch>`: 在 "player" 的 `inventory` 数组末尾加入 "Potion"。
+  </VariableThink>
+  <VariableInsert>
+  {
+    "characters": {
+      "Elara": {
+        "class": "Archer"
+      }
+    }
+  }
+  </VariableInsert>
+  <VariableEdit>
+  {
+    "characters": {
+      "player": {
+        "hp": "-=5"
+      }
+    }
+  }
+  </VariableEdit>
+  <VariablePatch>
+  [
+    { "op": "insert", "path": "/characters/player/inventory/-", "value": "Potion" }
+  ]
+  </VariablePatch>
+</format_request>

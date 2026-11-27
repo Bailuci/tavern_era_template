@@ -1,0 +1,67 @@
+{{// ERA 示例：世界书条目“ERA 变量意图说明”的写法。所属文档：docs/era/01-快速上手.md 第二步 //}}
+{{// 用法：把下面的内容填进角色主世界书的“ERA 变量意图说明”条目（点 ERA 面板“ERA 快速初始化”会自动创建，名字中间有一个空格）。 //}}
+{{// 变量结构与 docs/era/02-指令手册.md “综合示例”中初始化的 world_state 相同：capital 受 $meta 保护，characters 带 $template。 //}}
+{{// 写法要点：每个路径写清楚什么时候改、改多少、用哪种指令。不要只复述字段含义。 //}}
+<变量说明>
+请在故事推进时，按以下规则用 <VariableInsert>、<VariableEdit>、<VariableDelete>、<VariablePatch> 维护变量，保证变量与剧情一致。
+
+## world_state.capital（首都信息）
+- type、population、description 在初始化后通常不修改。
+- capital 受保护（$meta.updatable 为 false），直接修改会被忽略。
+- 确有剧情需要（例如战争后人口大幅变化）时，在同一个 <VariableEdit> 里解除保护并修改，紧接着再用一个 <VariableEdit> 恢复保护，两块写在同一次回复中：
+  <VariableEdit>
+  { "world_state": { "capital": { "population": 800, "$meta": { "updatable": true } } } }
+  </VariableEdit>
+  <VariableEdit>
+  { "world_state": { "capital": { "$meta": { "updatable": false } } } }
+  </VariableEdit>
+- 不要只解除保护而不恢复，否则之后任何修改都能直接生效。
+
+## world_state.characters（角色）
+- 键是角色名，例如 world_state.characters.Alex。
+- 新角色出场时，立刻用 <VariableInsert> 创建。模板会自动补上 level 1、hp 10、空的 inventory，只需写模板以外的信息：
+  <VariableInsert>
+  { "world_state": { "characters": { "Alex": { "class": "剑士" } } } }
+  </VariableInsert>
+- hp：受伤或治疗时用 <VariableEdit> 增减，写成 "-=数值" 或 "+=数值"。例如 Alex 受伤 2 点：
+  <VariableEdit>
+  { "world_state": { "characters": { "Alex": { "hp": "-=2" } } } }
+  </VariableEdit>
+- level：升级时用 <VariableEdit> 写 "+=1"。
+- inventory：是一个数组。获得物品时用 <VariablePatch> 追加到末尾，不要用 <VariableEdit> 整体改写（会把背包替换成只有新物品）：
+  <VariablePatch>
+  [ { "op": "insert", "path": "/world_state/characters/Alex/inventory/-", "value": "Potion" } ]
+  </VariablePatch>
+  用掉第一个物品时删除该位置：
+  <VariablePatch>
+  [ { "op": "remove", "path": "/world_state/characters/Alex/inventory/0" } ]
+  </VariablePatch>
+- 角色永久离开故事（死亡、彻底退场）时才删除。角色受模板中的 $meta.necessary 保护，要在同一次回复中先删除它的 $meta，再删除角色：
+  <VariableDelete>
+  { "world_state": { "characters": { "Alex": { "$meta": {} } } } }
+  </VariableDelete>
+  <VariableDelete>
+  { "world_state": { "characters": { "Alex": {} } } }
+  </VariableDelete>
+
+## world_state.game_version（游戏版本）
+- 只在剧情进入新章节时用 <VariableEdit> 修改，例如进入第二章：
+  <VariableEdit>
+  { "world_state": { "game_version": "2.0.0" } }
+  </VariableEdit>
+
+## 总体原则
+- 新出现的内容 → <VariableInsert>
+- 已有的值发生变化 → <VariableEdit>，数字用 "+=" / "-="
+- 彻底移除 → <VariableDelete>
+- 数组增删元素、整体替换对象、改名 → <VariablePatch>
+- 没有变化时不输出任何指令块。
+</变量说明>
+
+<变量结构>
+{{ERA-schema}}
+</变量结构>
+
+<当前变量>
+{{ERA:$ALLDATA}}
+</当前变量>

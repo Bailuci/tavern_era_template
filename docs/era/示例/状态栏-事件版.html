@@ -1,0 +1,132 @@
+<!doctype html>
+<!--
+  ERA 示例：用 Era.getCurrentVars() 和 era:writeDone 事件读取变量的状态栏（推荐写法）。所属文档：docs/era/03-状态栏.md
+  变量路径对应 docs/era/04-宏.md 步骤 1 的开场白（player_status.*、game_info.*）。
+
+  用法：把整个文件放进 html 代码块（首行写三个反引号加 html，末行写三个反引号），
+        填进角色卡局部正则“ERA 状态栏模板”的“替换为”。
+  不需要开启“强制重载功能”，变量变化时只更新文字，不会闪烁。
+  每一楼的状态栏都显示最新的变量。
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>动态更新状态栏</title>
+    <style>
+      body {
+        /* 使用系统字体，不依赖外部字体服务 */
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: transparent;
+      }
+
+      .era-statusbar {
+        color: #e0e0e0;
+        background: linear-gradient(145deg, #2c3e50, #34495e);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 20px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        border: 1px solid #4a6278;
+        overflow: hidden;
+      }
+
+      .era-statusbar-header {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #4a6278;
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+      }
+
+      .era-statusbar-header h4 {
+        margin: 0;
+        font-size: 1.1em;
+        font-weight: 700;
+        color: #1abc9c;
+        text-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
+      }
+
+      .era-statusbar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+      }
+
+      .era-statusbar-item {
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+
+      .era-statusbar-item-label {
+        font-size: 0.85em;
+        color: #bdc3c7;
+        margin-bottom: 4px;
+      }
+
+      .era-statusbar-item-value {
+        font-size: 1em;
+        font-weight: 700;
+        color: #ecf0f1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="era-statusbar">
+      <div class="era-statusbar-header">
+        <h4>角色状态</h4>
+      </div>
+      <div class="era-statusbar-grid">
+        <div class="era-statusbar-item">
+          <div class="era-statusbar-item-label">姓名</div>
+          <div class="era-statusbar-item-value" id="player-name">--</div>
+        </div>
+        <div class="era-statusbar-item">
+          <div class="era-statusbar-item-label">生命值</div>
+          <div class="era-statusbar-item-value" id="player-hp">-- / --</div>
+        </div>
+        <div class="era-statusbar-item">
+          <div class="era-statusbar-item-label">魔力值</div>
+          <div class="era-statusbar-item-value" id="player-mp">-- / --</div>
+        </div>
+        <div class="era-statusbar-item">
+          <div class="era-statusbar-item-label">时间与天气</div>
+          <div class="era-statusbar-item-value" id="game-time">--</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // $、_、eventOn、waitGlobalInitialized 都是酒馆助手提供给前端界面的全局函数，不需要导入。
+
+      /**
+       * 用变量更新界面。
+       * @param {object} stat 不含 $meta、$template 的变量（statWithoutMeta）
+       */
+      function render(stat) {
+        // _.get 在路径不存在时返回默认值，变量还没初始化时也不会报错
+        const get = (path, fallback = '--') => _.get(stat, path, fallback);
+        $('#player-name').text(`${get('player_status.name')} Lv.${get('player_status.level')}`);
+        $('#player-hp').text(`${get('player_status.hp')} / ${get('player_status.max_hp')}`);
+        $('#player-mp').text(`${get('player_status.mp')} / ${get('player_status.max_mp')}`);
+        $('#game-time').text(`第 ${get('game_info.day')} 天 ${get('game_info.hour')} 时 · ${get('game_info.weather')}`);
+      }
+
+      $(async () => {
+        // 等待 ERA 共享全局接口 Era
+        await waitGlobalInitialized('Era');
+
+        // 加载时读一次当前变量
+        render(Era.getCurrentVars().statWithoutMeta);
+
+        // 之后每次变量变化（AI 回复、滑动、删除或编辑消息、脚本写入）都会收到 era:writeDone
+        eventOn('era:writeDone', detail => {
+          render(detail.statWithoutMeta);
+        });
+      });
+    </script>
+  </body>
+</html>
