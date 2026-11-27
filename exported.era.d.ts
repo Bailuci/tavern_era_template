@@ -460,8 +460,8 @@ declare const Era: {
    * 在文件里的开关之前运行. 必须是同步的纯函数. 同名替换, 按名字顺序调用; 返回注销函数 (ERA-Heron 1.7.0 起)
    * @example
    * Era.registerEntryFilter('我的卡.规则二选一', (entry, ctx) => {
-   *   if (entry.name.includes('[归一前]')) return !ctx.stat.白鹭辞?.归一;
-   *   if (entry.name.includes('[归一后]')) return !!ctx.stat.白鹭辞?.归一;
+   *   if (entry.name.includes('[和平]')) return ctx.stat.世界?.时代 !== '战争';
+   *   if (entry.name.includes('[战争]')) return ctx.stat.世界?.时代 === '战争';
    * });
    */
   registerEntryFilter: (name: string, filter: Era.EntryFilter) => () => void;

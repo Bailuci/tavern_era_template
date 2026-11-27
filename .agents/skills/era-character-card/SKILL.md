@@ -72,8 +72,8 @@ export const Schema = z.object({
     时间段: z.enum(['清晨', '白天', '傍晚', '夜晚', '深夜']).describe('随剧情推进'),
     地点: Text,
   }),
-  阿辞: z.looseObject({
-    姓名: z.literal('白鹭辞').catch('白鹭辞'), // 只读设定
+  林晚: z.looseObject({
+    姓名: z.literal('林晚').catch('林晚'), // 只读设定
     好感度: Percent,
     背包: z.record(z.string().describe('物品名'), z.object({ 数量: Num })).prefault({}),
   }),
@@ -102,7 +102,7 @@ export const Schema = z.object({
 ```
 （开场白正文……）
 <VariableInsert>
-{ "世界状态": { "时间段": "夜晚", "地点": "庭院" }, "阿辞": { "姓名": "白鹭辞", "好感度": 30, "背包": {} } }
+{ "世界状态": { "时间段": "夜晚", "地点": "庭院" }, "林晚": { "姓名": "林晚", "好感度": 30, "背包": {} } }
 </VariableInsert>
 ```
 
@@ -127,9 +127,9 @@ export const Schema = z.object({
 - 世界状态.时间段：随剧情推进；跨过深夜后进入下一天的清晨。用 <VariableEdit> 改成新的值。
 - 世界状态.地点：角色当前所在的具体地点，换场景时用 <VariableEdit> 更新。
 
-## 阿辞
-- 阿辞.好感度：……什么情况下增减，每次一般变化多少，用 "+=3" 之类的增量。
-- 阿辞.背包：键是物品名。获得新物品用 <VariableInsert> 新增键；数量变化用 <VariableEdit> 的 "+=1"/"-=1"；用完用 <VariableDelete> 删除。
+## 林晚
+- 林晚.好感度：……什么情况下增减，每次一般变化多少，用 "+=3" 之类的增量。
+- 林晚.背包：键是物品名。获得新物品用 <VariableInsert> 新增键；数量变化用 <VariableEdit> 的 "+=1"/"-=1"；用完用 <VariableDelete> 删除。
 </变量说明>
 
 <变量结构>
