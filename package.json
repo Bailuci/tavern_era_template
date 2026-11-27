@@ -7,6 +7,8 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "dump": "node dump_schema.ts",
+    "era-init": "node era_init.mts",
+    "test:era-init": "node --test era_init.test.mts",
     "sync": "node tavern_sync.mjs"
   },
   "browserslist": [

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=schema.json
+# 所有开场白共用的初始变量, 要符合 schema.ts. 写好后运行 `pnpm era-init`, 它会把初始值写进每个开场白
+# (第一条消息/*.txt) 里 ERA-INIT 标记之间的 <VariableInsert>, 并按 schema 里的 .meta({ era }) 加上 $meta.
+# 某个开场白的初始值不同时, 在旁边建 `第一条消息/<文件名>.initvar.yaml`, 只写不同的部分 (对象逐层合并, 数组整体替换).
+# `pnpm dump` 会生成 schema.json, 编辑器据此检查这个文件.
+世界:
+  时间段: 傍晚
+  地点: 家门口
+角色:
+  好感度: 30
+  心情: 平静
+  背包:
+    钥匙:
+      数量: 1

@@ -7,6 +7,7 @@
 # - `GitHub用户名/仓库名`: 改成你的角色卡仓库, 状态栏与变量结构脚本从它的 dist/ 加载
 #
 # 世界书条目与 5 条正则与 ERA 面板“ERA 快速初始化”生成的同名, 因此不需要再点快速初始化.
+# 开场白里的初始变量由 `pnpm era-init` 按 initvar.yaml 生成 (见 使用说明.md).
 # ERA 更新规则后, 用 ERA-Heron 的 src/ERA变量框架/initer/manual/worldbook_entries/era_var_operation_rule.txt
 # 覆盖 世界书/ERA/变量操作规则.txt 即可 (或在酒馆里点 ERA 面板的“更新旧卡的规则”).
 头像: null
@@ -51,13 +52,24 @@
           顺序: 9998
         文件: 世界书/ERA/变量意图说明
 
+      # 可选: 教 AI 用 $expr 写公式和掷骰. 默认关闭, 需要时启用 (名字同样不能改, 分步更新时只发给更新模型)
+      - 名称: ERA 表达式规则
+        <<: *ERA条目
+        启用: false
+        插入位置:
+          类型: 指定深度
+          角色: 系统
+          深度: 0
+          顺序: 9997
+        文件: 世界书/ERA/表达式规则
+
 扩展字段:
   正则:
     # 以下 5 条与 ERA 快速初始化生成的正则相同 (第 4 条的内容改成从本卡 dist/ 加载状态栏)
     - 正则名称: ERA 数据隐藏正则
       id: 6c1f7b52-3a0e-4d6b-9a51-0e7d3c2b9a11
       启用: true
-      查找表达式: '/<(variable(?:insert|edit|delete|patch))>\s*(?=[\s\S]*?\S[\s\S]*?<\/\1>)((?:(?!<(?:era_data|variable(?:think|insert|edit|delete|patch))>|<\/\1>)[\s\S])*?)\s*<\/\1>|<\/?era_extra>/gi'
+      查找表达式: '/<era_plan>[\s\S]*?<\/era_plan>|<(variable(?:insert|edit|delete|patch))>\s*(?=[\s\S]*?\S[\s\S]*?<\/\1>)((?:(?!<(?:era_data|variable(?:think|insert|edit|delete|patch))>|<\/\1>)[\s\S])*?)\s*<\/\1>|<EraFCall\b(?:"[^"]*"|''[^'']*''|[^>"''])*?(?:\/>|>(?:(?!<EraFCall\b)[\s\S])*?<\/EraFCall\s*>)|<\/?era_extra>/gi'
       内容: ''
       来源:
         用户输入: true
@@ -130,12 +142,12 @@
 
   酒馆助手:
     脚本库:
-      - 名称: ERA-Heron 1.6.0
+      - 名称: ERA-Heron 1.7.0
         id: 7a3c9e15-2b4d-4f8a-9c61-1d5e8f2a0b55
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v1.6.0/artifact/bundle.js';
+          import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v1.7.0/artifact/bundle.js';
 
       - 名称: 变量结构
         id: 3f8d1a62-9c4e-4b7d-8e25-6a0c3f9b1d66

@@ -2,7 +2,10 @@
  * 修改声明（AFPL 第 2(c)(i) 条）：本文件由 Bailuci 新增。
  * 日期：2026-11-25 至 2026-11-26
  * 目的：供角色卡前端读写 ERA 变量（era.ts，基于 pinia）与提供 Era 接口的类型声明（exported.era.d.ts）；
- *       新增按楼层读取的 store、commit / patch 写入、registerEraHook、isLatestFloor，群聊中的归属判断与 ERA 一致
+ *       新增按楼层读取的 store、commit / patch 写入、registerEraHook、isLatestFloor，群聊中的归属判断与 ERA 一致；新增 getEraMath
+ *       2026-11-26 新增 requireEra、compareEraVersions
+ *       新增 registerEraEntryFilter
+ *       2026-11-27 更正 getEraMath 的注释；新增 registerEraTool、registerEraExprFn
  * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 修改记录.md
  */
 import type { StoreDefinition } from 'pinia';
@@ -374,7 +377,7 @@ type EraHookFn<P extends 'before' | 'after'> = P extends 'before'
  *   更早的版本无法判断钩子是否还在, 不会补注册, ERA 重载后请重新加载角色卡脚本.
  * - 脚本卸载时自动注销.
  *
- * 钩子必须是同步的、只依赖 `ctx` 的纯函数, 见 doc/05 第 8 节.
+ * 钩子必须是同步的、只依赖 `ctx` 的纯函数, 见 docs/era/05 第 8 节.
  *
  * @param phase `'before'`: 指令执行前修改指令; `'after'`: 指令执行后修改变量
  * @param id 钩子的标识, 建议使用 “角色卡.功能”
@@ -439,4 +442,231 @@ export function registerEraHook<P extends 'before' | 'after'>(
 
   tryRegister(true);
   return dispose;
+}
+
+/**
+ * 比较两个版本号 (`'1.7'`、`'1.7.0'`、`'v1.7.0-beta.1'` 都可以; 缺少的段按 0 计, 预发布后缀忽略).
+ * @returns 负数表示 a 较旧, 0 表示相同, 正数表示 a 较新; 无法识别时返回 `NaN`
+ */
+export function compareEraVersions(a: string, b: string): number {
+  const parse = (text: string): number[] | null => {
+    const match = String(text ?? '')
+      .trim()
+      .match(/^v?(\d+(?:\.\d+){0,2})(?:[-+].*)?$/i);
+    if (!match) {
+      return null;
+    }
+    const parts = match[1].split('.').map(Number);
+    while (parts.length < 3) {
+      parts.push(0);
+    }
+    return parts;
+  };
+  const left = parse(a);
+  const right = parse(b);
+  if (!left || !right) {
+    return NaN;
+  }
+  for (let i = 0; i < 3; i++) {
+    if (left[i] !== right[i]) {
+      return left[i] - right[i];
+    }
+  }
+  return 0;
+}
+
+/**
+ * 检查玩家装的 ERA 是否不低于 `min_version` (例如 `'1.7'`). 角色卡用到新接口之前调用, 不满足时提示玩家更新.
+ *
+ * - ERA-Heron 1.7.0 起有 `Era.version`; 更早的版本没有, 一律视为不满足.
+ * - 等不到全局接口 `Era` (ERA 未启用或版本太旧) 时, 超时后视为不满足.
+ * - 也可以在角色卡变量 `ERA最低版本` 中声明, ERA 1.7.0 起会在加载角色卡时自行检查并提示.
+ *
+ * @param options.toast 不满足时是否弹窗提示, 默认 `true`
+ * @param options.timeout 等待 `Era` 的毫秒数, 默认 `10000`
+ * @returns 是否满足
+ * @example
+ * if (await requireEra('1.7')) {
+ *   await Era.applyText(reply);
+ * }
+ */
+export async function requireEra(
+  min_version: string,
+  options: { toast?: boolean; timeout?: number } = {},
+): Promise<boolean> {
+  const { toast = true, timeout = 10000 } = options;
+  const ready = await Promise.race([
+    waitGlobalInitialized('Era').then(
+      () => true,
+      () => false,
+    ),
+    new Promise<boolean>(resolve => setTimeout(() => resolve(false), timeout)),
+  ]);
+  const version = ready ? (Era as { version?: unknown }).version : undefined;
+  const ok = typeof version === 'string' && compareEraVersions(version, min_version) >= 0;
+  if (!ok) {
+    const current = typeof version === 'string' ? `ERA-Heron ${version}` : ready ? '1.7 以前的 ERA' : '未检测到 ERA';
+    const message = `这张角色卡需要 ERA ${min_version} 以上, 当前是 ${current}. 请更新 ERA 脚本, 否则部分功能不会生效.`;
+    console.warn(`[requireEra] ${message}`);
+    if (toast) {
+      toastr.warning(message, '[ERA] 版本过低');
+    }
+  }
+  return ok;
+}
+
+/**
+ * 获取确定性数学函数 `Era.math` (ERA-Heron 1.7.0 起), 用法同 `Math`, 三角、指数、对数在各浏览器上逐位一致.
+ * 钩子里直接用 `ctx.math`; 前端需要与 ERA 重算结果一致的数值时用它. ERA 版本过旧 (没有 `Era.math`) 时 Promise 失败; 没有装 ERA 时一直等待
+ * @example
+ * const math = await getEraMath();
+ * const dx = math.cos(angle) * speed;
+ */
+export async function getEraMath(): Promise<Era.DetMath> {
+  await waitGlobalInitialized('Era');
+  if (!Era.math) {
+    throw new Error('当前 ERA 不提供 Era.math, 请更新到 ERA-Heron 1.7.0 以上');
+  }
+  return Era.math;
+}
+
+/**
+ * 在角色卡脚本中注册分步更新的条目过滤器 (`Era.registerEntryFilter`, ERA-Heron 1.7.0 起), 处理方式与 `registerEraHook` 相同:
+ * ERA 加载得比本脚本晚时会等待; ERA 脚本重载会丢失过滤器, 本函数会在之后的 `era:writeDone` 时重新注册; 脚本卸载时自动注销.
+ * 旧版 ERA 没有该功能时只给出提示, 角色卡照常运行.
+ *
+ * 过滤器必须是同步的、只依赖参数的纯函数: 返回 `false` 排除条目, `true` 纳入 (即使文件里关闭了),
+ * 字符串表示纳入并替换内容, 其他值表示不表态 (按文件里的开关和关键字).
+ *
+ * @param name 过滤器的名字, 建议使用 “角色卡.功能”
+ * @returns 注销函数
+ */
+export function registerEraEntryFilter(name: string, filter: Era.EntryFilter): () => void {
+  const owner = getOwner();
+  let disposed = false;
+  let unregister: (() => void) | null = null;
+
+  const register = async (force: boolean) => {
+    await waitGlobalInitialized('Era');
+    if (disposed || getOwner() !== owner) {
+      return;
+    }
+    if (typeof Era.registerEntryFilter !== 'function' || typeof Era.hasEntryFilter !== 'function') {
+      if (force) {
+        console.warn('[registerEraEntryFilter] 当前 ERA 不支持条目过滤器, 请更新 ERA-Heron 到 1.7.0 以上');
+      }
+      return;
+    }
+    if (!force && Era.hasEntryFilter(name)) {
+      return;
+    }
+    unregister = Era.registerEntryFilter(name, filter);
+    if (!Era.hasEntryFilter(name)) {
+      console.error(`[registerEraEntryFilter] 过滤器 ${name} 注册失败, 详见 ERA 的提示`);
+    } else {
+      console.info(`[registerEraEntryFilter] 过滤器 ${name} 注册成功`);
+    }
+  };
+  const tryRegister = (force = false) => {
+    register(force).catch(e => console.error(`[registerEraEntryFilter] 过滤器 ${name} 注册失败`, e));
+  };
+
+  const listener = eventOn('era:writeDone', () => tryRegister());
+  const dispose = () => {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    listener.stop();
+    unregister?.();
+  };
+  $(window).on('pagehide', dispose);
+
+  tryRegister(true);
+  return dispose;
+}
+
+/** 等待 ERA、ERA 重载后补注册、脚本卸载时注销的通用写法 (registerEraTool / registerEraExprFn 共用) */
+function keepRegistered(label: string, feature: string, has: () => boolean, register: () => () => void): () => void {
+  const owner = getOwner();
+  let disposed = false;
+  let unregister: (() => void) | null = null;
+
+  const attempt = async (force: boolean) => {
+    await waitGlobalInitialized('Era');
+    if (disposed || getOwner() !== owner) {
+      return;
+    }
+    if (!Era.features?.includes(feature)) {
+      if (force) {
+        console.warn(`[${label}] 当前 ERA 不支持该功能, 请更新 ERA-Heron 到 1.8.0 以上`);
+      }
+      return;
+    }
+    if (!force && has()) {
+      return;
+    }
+    unregister = register();
+    console[has() ? 'info' : 'error'](`[${label}] ${has() ? '注册成功' : '注册失败, 详见 ERA 的提示'}`);
+  };
+  const tryRegister = (force = false) => {
+    attempt(force).catch(e => console.error(`[${label}] 注册失败`, e));
+  };
+
+  const listener = eventOn('era:writeDone', () => tryRegister());
+  const dispose = () => {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    listener.stop();
+    unregister?.();
+  };
+  $(window).on('pagehide', dispose);
+
+  tryRegister(true);
+  return dispose;
+}
+
+/**
+ * 在角色卡脚本中注册工具 (`Era.registerTool`, ERA-Heron 1.8 起), 处理方式与 `registerEraHook` 相同.
+ * AI 在正文里写 `<EraFCall name="工具名">{"参数": 1}</EraFCall>` 调用它; `handler` 必须是同步纯函数.
+ * @example
+ * registerEraTool('攻击', {
+ *   description: '对一个敌人发动普通攻击',
+ *   parameters: z.object({ 目标: z.string() }),
+ *   handler({ 目标 }, ctx) {
+ *     const enemy = ctx.stat.敌人?.[目标];
+ *     if (!enemy) throw new Error(`没有名为 ${目标} 的敌人`);
+ *     const damage = Math.max(1, ctx.stat.主角.攻击 - enemy.防御 + Math.floor(ctx.random() * 6));
+ *     return { operations: [{ edit: { 敌人: { [目标]: { 生命: enemy.生命 - damage } } } }], result: { 伤害: damage } };
+ *   },
+ * });
+ */
+export function registerEraTool(name: string, definition: Era.ToolDefinition): () => void {
+  return keepRegistered(
+    `registerEraTool ${name}`,
+    'tools',
+    () => Era.hasTool(name),
+    () => Era.registerTool(name, definition),
+  );
+}
+
+/**
+ * 在角色卡脚本中注册 `$expr` 的自定义公式函数 (`Era.registerExprFn`, ERA-Heron 1.8 起), 处理方式与 `registerEraHook` 相同.
+ * @example
+ * registerEraExprFn('伤害', (攻击, 防御) => Math.max(1, 攻击 - 防御), { params: 2, description: '攻击减防御, 至少 1' });
+ * // AI 写: <VariableEdit>{"敌人": {"生命": {"$expr": "敌人.生命 - 伤害(主角.攻击 + roll(1, 6), 敌人.防御)"}}}</VariableEdit>
+ */
+export function registerEraExprFn(
+  name: string,
+  fn: (...args: number[]) => number,
+  options?: Era.ExprFnOptions,
+): () => void {
+  return keepRegistered(
+    `registerEraExprFn ${name}`,
+    'exprFns',
+    () => Era.hasExprFn(name),
+    () => Era.registerExprFn(name, fn, options),
+  );
 }

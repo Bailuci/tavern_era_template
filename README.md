@@ -22,7 +22,8 @@ Bailuci/tavern_era_template（本母版）
 - `util/era.ts`：前端状态栏/脚本用的 ERA 数据 Store 工具（`@util/era`）
 - `exported.era.d.ts`：ERA 全局类型声明（置于根目录以躲开 `bump_deps.yaml` 对 `@types/` 的定期重建）
 - `.agents/skills/era-character-card/`：供 AI 助手读取的 ERA 制卡流程技能
-- `docs/era/`：ERA-Heron 文档（01~07 与示例）
+- `docs/era/`：ERA-Heron 文档（01~08 与示例；08 讲按变量切换世界书条目的动态提示词）
+- `era_init.mts`：`pnpm era-init`，按 `initvar.yaml` 生成 ERA 角色卡开场白里的初始变量
 - `初始模板/ERA角色卡/`：开箱即用的 ERA 角色卡骨架（世界书规则与意图说明、ERA 正则、变量结构脚本、状态栏），复制到 `src/` 即可，用法见其中的 `使用说明.md`
 
 ## 常用命令
@@ -32,6 +33,7 @@ pnpm install   # 安装依赖
 pnpm watch     # 开发热重载（配合酒馆助手实时监听 + tavern_sync）
 pnpm build     # 全量生产构建
 pnpm dump      # 生成 schema.json
+pnpm era-init  # 按 initvar.yaml 生成 ERA 角色卡开场白里的初始变量（见 初始模板/ERA角色卡/使用说明.md）
 pnpm sync      # 手动运行 tavern_sync
 ```
 
