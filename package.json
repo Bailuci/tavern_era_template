@@ -7,8 +7,11 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "dump": "node dump_schema.ts",
+<<<<<<< HEAD
     "era-init": "node era_init.mts",
     "test:era-init": "node --test era_init.test.mts",
+=======
+>>>>>>> c264c1a620cdf0169281cbcc1ead53e3dcc7f4dc
     "sync": "node tavern_sync.mjs"
   },
   "browserslist": [
