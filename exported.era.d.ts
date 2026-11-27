@@ -451,7 +451,7 @@ declare namespace Era {
  * 旧版 ERA 没有该接口, 等待将永远不会结束.
  */
 declare const Era: {
-  /** ERA-Heron 的版本号, 例如 `'2.0.0'` (更早的版本没有该字段, 判断版本请用 `era.ts` 的 `requireEra`) */
+  /** ERA-Heron 的版本号, 例如 `'2.0.1'` (更早的版本没有该字段, 判断版本请用 `era.ts` 的 `requireEra`) */
   version: string;
   /** 当前版本提供的功能, 例如 `Era.features.includes('applyText')` */
   features: readonly string[];

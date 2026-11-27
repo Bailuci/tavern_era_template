@@ -476,7 +476,7 @@ export function compareEraVersions(a: string, b: string): number {
 }
 
 /**
- * 检查玩家装的 ERA 是否不低于 `min_version` (例如 `'2.0'`). 角色卡用到新接口之前调用, 不满足时提示玩家更新.
+ * 检查玩家装的 ERA 是否不低于 `min_version` (例如 `'2.0.1'`). 角色卡用到新接口之前调用, 不满足时提示玩家更新.
  *
  * - 有 `Era.version`; 更早的版本没有, 一律视为不满足.
  * - 等不到全局接口 `Era` (ERA 未启用或版本太旧) 时, 超时后视为不满足.
@@ -486,7 +486,7 @@ export function compareEraVersions(a: string, b: string): number {
  * @param options.timeout 等待 `Era` 的毫秒数, 默认 `10000`
  * @returns 是否满足
  * @example
- * if (await requireEra('2.0')) {
+ * if (await requireEra('2.0.1')) {
  *   await Era.applyText(reply);
  * }
  */
@@ -525,7 +525,7 @@ export async function requireEra(
 export async function getEraMath(): Promise<Era.DetMath> {
   await waitGlobalInitialized('Era');
   if (!Era.math) {
-    throw new Error('当前 ERA 不提供 Era.math, 请更新到 ERA-Heron 2.0.0 以上');
+    throw new Error('当前 ERA 不提供 Era.math, 请更新到 ERA-Heron 2.0.1 以上');
   }
   return Era.math;
 }
@@ -553,7 +553,7 @@ export function registerEraEntryFilter(name: string, filter: Era.EntryFilter): (
     }
     if (typeof Era.registerEntryFilter !== 'function' || typeof Era.hasEntryFilter !== 'function') {
       if (force) {
-        console.warn('[registerEraEntryFilter] 当前 ERA 不支持条目过滤器, 请更新 ERA-Heron 到 2.0.0 以上');
+        console.warn('[registerEraEntryFilter] 当前 ERA 不支持条目过滤器, 请更新 ERA-Heron 到 2.0.1 以上');
       }
       return;
     }
@@ -599,7 +599,7 @@ function keepRegistered(label: string, feature: string, has: () => boolean, regi
     }
     if (!Era.features?.includes(feature)) {
       if (force) {
-        console.warn(`[${label}] 当前 ERA 不支持该功能, 请更新 ERA-Heron 到 2.0.0 以上`);
+        console.warn(`[${label}] 当前 ERA 不支持该功能, 请更新 ERA-Heron 到 2.0.1 以上`);
       }
       return;
     }
