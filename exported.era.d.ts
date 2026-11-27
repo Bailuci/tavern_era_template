@@ -554,6 +554,12 @@ declare const Era: {
   /** 确定性数学函数, 用法同 `Math`, 各浏览器逐位一致 */
   math: Era.DetMath;
   /** 当前注册的变量结构的文字说明, 没有注册时为空字符串; 宏为 `{{ERA-schema}}` */
+  /**
+   * 改写一楼的正文并按新正文重新计算变量, 算完后返回; 自动保留 ERA 写在原正文里的块 (`<era_data>`、`<era_extra>`).
+   * 用酒馆助手的 `setChatMessages` 改写正文时 ERA 不会自动重算, 用它就不需要自己再请求同步.
+   * 只是写变量时不要改正文, 用 `Era.applyText` / `Era.commit`
+   */
+  setMessageText: (where: Era.FloorRef, text: string) => Promise<Era.WriteResult>;
   describeSchema: () => string;
   /** 额外模型解析 */
   extra: {
