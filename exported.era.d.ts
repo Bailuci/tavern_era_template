@@ -8,6 +8,9 @@
  *       status() 增加 pendingSync；Era.checkSchema 与 era:schemaInvalid，注明钩子里不能调用写入接口
  *       2026-11-27 Era.keepMessageKey 同时保留 <era_extra>；说明 seedMk 只对应正文中的指令；错误事件补 source 字段；
  *       更正重入保护、{{ERA-issues}} 报告范围、Era.extra.wait 与 getEraMath 的注释；工具调用与自定义公式函数（1.8）
+ *       2026-11-27 registerExprFn 不能注册名为 call 的函数
+ *       2026-11-27 BeforeApplyContext 的 commands 注明可以改写（与实现一致）
+ *       2026-11-27 Era.extra.status() 增加 history（最近几次分步更新与规划的请求记录）
  * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 修改记录.md
  */
 declare namespace Era {
@@ -293,6 +296,24 @@ declare namespace Era {
       /** 不影响结果判定的告警 */
       warnings: string[];
     } | null;
+    /**
+     * 最近几次 (最多 10 次) 分步更新与正文前规划的请求记录, 最新的在前; 只在内存中, 切换聊天时清空, 不含 API 密钥.
+     * 规划的 `mk` 是玩家楼; 发送前规划时玩家楼还没有 MK, 为空字符串. 卡里没有 `[era_plan]` 条目 (没有发出请求) 的规划不记录
+     */
+    history: Array<{
+      /** `update` 分步更新, `plan` 正文前规划 */
+      type: 'update' | 'plan';
+      mk: string;
+      ok: boolean;
+      status: ExtraResultStatus;
+      error?: string;
+      /** 实际发送的提示词 (含头部提示词与预设条目), 每个分组保留最后一次请求; 规划的分组名为 `规划` */
+      prompt?: Array<{ group: string; messages: { role: string; content: string }[] }>;
+      rawReply?: string;
+      finishedAt: number;
+      problems: string[];
+      warnings: string[];
+    }>;
     /** 输出已写进这些楼 (MK) 的正文、但同步还没算完; 发送前等待会等它们 */
     pendingSync: string[];
   };
@@ -402,7 +423,13 @@ declare namespace Era {
     math: DetMath;
   };
 
-  type BeforeApplyContext = Omit<AfterApplyContext, 'stat'>;
+  type BeforeApplyContext = Omit<AfterApplyContext, 'stat' | 'commands'> & {
+    /**
+     * 从正文中解析出的指令, 可原地修改、删除、追加, 或整体赋值给 `ctx.commands`, 修改会生效.
+     * `<VariableEdit>` 中的 `{"$expr": "..."}` 叶子原样出现 (尚未求值)
+     */
+    commands: HookCommand[];
+  };
 
   type SchemaErrorPayload = {
     errors: {
@@ -456,7 +483,8 @@ declare const Era: {
   hasHook: (id: string, phase?: 'before' | 'after') => boolean;
   /**
    * 注册条目过滤器: 按变量决定世界书条目发不发、发什么内容, 不改世界书文件. 分步更新按**目标楼**的状态,
-   * 正文前规划与主生成 (每次生成加载世界书时) 按最新的状态; 用 `ctx.purpose` 区分.
+   * 正文前规划与主生成 (玩家触发的剧情生成加载世界书时) 按最新的状态; 用 `ctx.purpose` 区分.
+   * 主生成里纳入的条目仍受酒馆的延迟、分组和预算限制, 带粘性或冷却的条目只能排除.
    * 在文件里的开关之前运行. 必须是同步的纯函数. 同名替换, 按名字顺序调用; 返回注销函数
    * @example
    * Era.registerEntryFilter('我的卡.规则二选一', (entry, ctx) => {
@@ -476,7 +504,8 @@ declare const Era: {
   hasTool: (name: string) => boolean;
   /**
    * 注册自定义公式函数, 在 `$expr` 里调用, 例如 `伤害(roll(1, 6), 防御)`.
-   * 只接收数字、返回有限数字的同步纯函数; 不能与内置函数同名. 返回注销函数
+   * 只接收数字、返回有限数字的同步纯函数; 不能与内置函数同名, 也不能叫 `call`
+   * (保留给存成变量的公式 `call(公式路径, 参数…)`). 返回注销函数
    */
   registerExprFn: (name: string, fn: (...args: number[]) => number, options?: Era.ExprFnOptions) => () => void;
   /** 当前角色卡是否注册了该名字的自定义公式函数 */
@@ -538,7 +567,7 @@ declare const Era: {
      * 返回 `false` 表示到了时限 (按重试次数、超时和写入计算) 或玩家点击提示框放弃了等待
      */
     wait: () => Promise<boolean>;
-    /** 同步查询正在进行的解析和最近一次解析的结果 (含实际提示词与原始回复) */
+    /** 同步查询正在进行的解析、最近一次解析的结果 (含实际提示词与原始回复) 和最近几次的请求记录 */
     status: () => Era.ExtraStatusSnapshot;
     /**
      * 正文前规划: 按 `[era_plan]` 条目为一段玩家文字做规划, 返回追加了 `<era_plan>` 的文本, 不写入任何内容.
