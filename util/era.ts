@@ -96,7 +96,7 @@ export type EraDataStore<D> = {
 export type EraDataStoreOptions = {
   /**
    * 读取哪一楼处理完之后的变量 (消息 ID, 可以用负数从末尾倒数). 省略时读取聊天的最新变量.
-   * 楼层界面可以传 `getCurrentMessageId()`, 让旧楼显示那一楼当时的值. 需要 ERA-Heron 1.6.0 以上 (`Era.getVarsAt`),
+   * 楼层界面可以传 `getCurrentMessageId()`, 让旧楼显示那一楼当时的值. 需要 ERA-Heron (`Era.getVarsAt`),
    * 旧版 ERA 会退回显示最新变量
    */
   message_id?: number;
@@ -373,7 +373,7 @@ type EraHookFn<P extends 'before' | 'after'> = P extends 'before'
  * 在角色卡脚本中注册更新钩子 (`Era.onBeforeApply` / `Era.onAfterApply`), 处理方式与 `registerEraSchema` 相同:
  *
  * - ERA 加载得比本脚本晚时会一直等待, 直到能够注册.
- * - ERA 脚本重载会丢失钩子, 本函数会在之后的 `era:writeDone` 时重新注册. 这需要 ERA-Heron 1.6.0 以上的 `Era.hasHook`;
+ * - ERA 脚本重载会丢失钩子, 本函数会在之后的 `era:writeDone` 时重新注册. 这需要 ERA-Heron 的 `Era.hasHook`;
  *   更早的版本无法判断钩子是否还在, 不会补注册, ERA 重载后请重新加载角色卡脚本.
  * - 脚本卸载时自动注销.
  *
@@ -476,17 +476,17 @@ export function compareEraVersions(a: string, b: string): number {
 }
 
 /**
- * 检查玩家装的 ERA 是否不低于 `min_version` (例如 `'1.7'`). 角色卡用到新接口之前调用, 不满足时提示玩家更新.
+ * 检查玩家装的 ERA 是否不低于 `min_version` (例如 `'2.0'`). 角色卡用到新接口之前调用, 不满足时提示玩家更新.
  *
- * - ERA-Heron 1.7.0 起有 `Era.version`; 更早的版本没有, 一律视为不满足.
+ * - 有 `Era.version`; 更早的版本没有, 一律视为不满足.
  * - 等不到全局接口 `Era` (ERA 未启用或版本太旧) 时, 超时后视为不满足.
- * - 也可以在角色卡变量 `ERA最低版本` 中声明, ERA 1.7.0 起会在加载角色卡时自行检查并提示.
+ * - 也可以在角色卡变量 `ERA最低版本` 中声明, ERA 会在加载角色卡时自行检查并提示.
  *
  * @param options.toast 不满足时是否弹窗提示, 默认 `true`
  * @param options.timeout 等待 `Era` 的毫秒数, 默认 `10000`
  * @returns 是否满足
  * @example
- * if (await requireEra('1.7')) {
+ * if (await requireEra('2.0')) {
  *   await Era.applyText(reply);
  * }
  */
@@ -505,7 +505,7 @@ export async function requireEra(
   const version = ready ? (Era as { version?: unknown }).version : undefined;
   const ok = typeof version === 'string' && compareEraVersions(version, min_version) >= 0;
   if (!ok) {
-    const current = typeof version === 'string' ? `ERA-Heron ${version}` : ready ? '1.7 以前的 ERA' : '未检测到 ERA';
+    const current = typeof version === 'string' ? `ERA-Heron ${version}` : ready ? '较早版本的 ERA' : '未检测到 ERA';
     const message = `这张角色卡需要 ERA ${min_version} 以上, 当前是 ${current}. 请更新 ERA 脚本, 否则部分功能不会生效.`;
     console.warn(`[requireEra] ${message}`);
     if (toast) {
@@ -516,7 +516,7 @@ export async function requireEra(
 }
 
 /**
- * 获取确定性数学函数 `Era.math` (ERA-Heron 1.7.0 起), 用法同 `Math`, 三角、指数、对数在各浏览器上逐位一致.
+ * 获取确定性数学函数 `Era.math`, 用法同 `Math`, 三角、指数、对数在各浏览器上逐位一致.
  * 钩子里直接用 `ctx.math`; 前端需要与 ERA 重算结果一致的数值时用它. ERA 版本过旧 (没有 `Era.math`) 时 Promise 失败; 没有装 ERA 时一直等待
  * @example
  * const math = await getEraMath();
@@ -525,13 +525,13 @@ export async function requireEra(
 export async function getEraMath(): Promise<Era.DetMath> {
   await waitGlobalInitialized('Era');
   if (!Era.math) {
-    throw new Error('当前 ERA 不提供 Era.math, 请更新到 ERA-Heron 1.7.0 以上');
+    throw new Error('当前 ERA 不提供 Era.math, 请更新到 ERA-Heron 2.0.0 以上');
   }
   return Era.math;
 }
 
 /**
- * 在角色卡脚本中注册分步更新的条目过滤器 (`Era.registerEntryFilter`, ERA-Heron 1.7.0 起), 处理方式与 `registerEraHook` 相同:
+ * 在角色卡脚本中注册分步更新的条目过滤器 (`Era.registerEntryFilter`), 处理方式与 `registerEraHook` 相同:
  * ERA 加载得比本脚本晚时会等待; ERA 脚本重载会丢失过滤器, 本函数会在之后的 `era:writeDone` 时重新注册; 脚本卸载时自动注销.
  * 旧版 ERA 没有该功能时只给出提示, 角色卡照常运行.
  *
@@ -553,7 +553,7 @@ export function registerEraEntryFilter(name: string, filter: Era.EntryFilter): (
     }
     if (typeof Era.registerEntryFilter !== 'function' || typeof Era.hasEntryFilter !== 'function') {
       if (force) {
-        console.warn('[registerEraEntryFilter] 当前 ERA 不支持条目过滤器, 请更新 ERA-Heron 到 1.7.0 以上');
+        console.warn('[registerEraEntryFilter] 当前 ERA 不支持条目过滤器, 请更新 ERA-Heron 到 2.0.0 以上');
       }
       return;
     }
@@ -599,7 +599,7 @@ function keepRegistered(label: string, feature: string, has: () => boolean, regi
     }
     if (!Era.features?.includes(feature)) {
       if (force) {
-        console.warn(`[${label}] 当前 ERA 不支持该功能, 请更新 ERA-Heron 到 1.8.0 以上`);
+        console.warn(`[${label}] 当前 ERA 不支持该功能, 请更新 ERA-Heron 到 2.0.0 以上`);
       }
       return;
     }
@@ -629,7 +629,7 @@ function keepRegistered(label: string, feature: string, has: () => boolean, regi
 }
 
 /**
- * 在角色卡脚本中注册工具 (`Era.registerTool`, ERA-Heron 1.8 起), 处理方式与 `registerEraHook` 相同.
+ * 在角色卡脚本中注册工具 (`Era.registerTool`), 处理方式与 `registerEraHook` 相同.
  * AI 在正文里写 `<EraFCall name="工具名">{"参数": 1}</EraFCall>` 调用它; `handler` 必须是同步纯函数.
  * @example
  * registerEraTool('攻击', {
@@ -653,7 +653,7 @@ export function registerEraTool(name: string, definition: Era.ToolDefinition): (
 }
 
 /**
- * 在角色卡脚本中注册 `$expr` 的自定义公式函数 (`Era.registerExprFn`, ERA-Heron 1.8 起), 处理方式与 `registerEraHook` 相同.
+ * 在角色卡脚本中注册 `$expr` 的自定义公式函数 (`Era.registerExprFn`), 处理方式与 `registerEraHook` 相同.
  * @example
  * registerEraExprFn('伤害', (攻击, 防御) => Math.max(1, 攻击 - 防御), { params: 2, description: '攻击减防御, 至少 1' });
  * // AI 写: <VariableEdit>{"敌人": {"生命": {"$expr": "敌人.生命 - 伤害(主角.攻击 + roll(1, 6), 敌人.防御)"}}}</VariableEdit>

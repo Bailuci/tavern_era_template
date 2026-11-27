@@ -66,14 +66,14 @@ declare namespace Era {
   };
 
   /**
-   * 钩子看到的指令. `edit` 的数据里可能有尚未求值的表达式叶子 `{ $expr: '...' }` (ERA-Heron 1.7.0 起),
+   * 钩子看到的指令. `edit` 的数据里可能有尚未求值的表达式叶子 `{ $expr: '...' }`,
    * 按数字处理指令的钩子要跳过它
    */
-  /** `call` 是工具调用 `<EraFCall>` (ERA-Heron 1.8 起), `data` 为 `[{ name, args }]` */
+  /** `call` 是工具调用 `<EraFCall>`, `data` 为 `[{ name, args }]` */
   type HookCommand = { type: 'insert' | 'edit' | 'delete' | 'patch' | 'call'; data: any[] };
 
   /**
-   * 确定性数学函数 (ERA-Heron 1.7.0 起), 用法同 `Math`. 三角、指数、对数移植自 fdlibm, 各浏览器逐位一致;
+   * 确定性数学函数, 用法同 `Math`. 三角、指数、对数移植自 fdlibm, 各浏览器逐位一致;
    * 会在重算时再次执行的代码 (钩子) 不要直接用 `Math.sin/exp/log/pow` 或 `**`
    */
   type DetMath = {
@@ -115,7 +115,7 @@ declare namespace Era {
 
   type SimulateOptions = {
     /**
-     * 表达式 `random()` / `roll()` 与钩子随机数按哪个 MK 取种子; 默认不对应任何消息, 骰点仅供参考 (ERA-Heron 1.7.0 起).
+     * 表达式 `random()` / `roll()` 与钩子随机数按哪个 MK 取种子; 默认不对应任何消息, 骰点仅供参考.
      * 指定时骰点与"这段文本出现在该楼正文里"相同; `applyText` / `commit` 的旁路写入按写入序号取种子, 骰点不同,
      * 要预览旁路写入请用 `atomic: true` 提交 (预检不通过时不写入)
      */
@@ -152,7 +152,7 @@ declare namespace Era {
     | { edit: object }
     | { delete: object }
     | { patch: PatchOperation[] }
-    /** 工具调用 (ERA-Heron 1.8 起) */
+    /** 工具调用 */
     | { call: { name: string; args?: any } };
 
   type CommitOptions = {
@@ -163,13 +163,13 @@ declare namespace Era {
     /** 有任何一项不能生效时, 全部不写入 */
     atomic?: boolean;
     /**
-     * 幂等键 (ERA-Heron 1.8 起): 目标楼已有同 key 的写入时跳过这次提交, 结果带 `skipped: true`.
+     * 幂等键: 目标楼已有同 key 的写入时跳过这次提交, 结果带 `skipped: true`.
      * 用于“首次显示时发奖励”“点击领取”这类只能生效一次的写入; 带 key 的写入不参与合并与压缩
      */
     key?: string;
   };
 
-  /** `skipped`: 该楼已有同一幂等键的写入, 这次没有写入 (ERA-Heron 1.8 起) */
+  /** `skipped`: 该楼已有同一幂等键的写入, 这次没有写入 */
   type WriteResult = { mk: string; stat: any; statWithoutMeta: any; skipped?: boolean };
 
   /** `Era.parseCommands` 解析出的一个指令块; 数据未转义, 一个块可以有多个对象 */
@@ -185,7 +185,7 @@ declare namespace Era {
   type CommandOrigin = 'text' | 'api' | 'hook' | 'tool';
 
   /**
-   * 指令的来源标记, 只用于报告, 不影响规则 (ERA-Heron 1.7.0 起): `'extra'` 分步更新写入的 `<era_extra>` 中额外模型的输出,
+   * 指令的来源标记, 只用于报告, 不影响规则: `'extra'` 分步更新写入的 `<era_extra>` 中额外模型的输出,
    * `'apiOps'` 旁路写入 (含 `Era.applyText`). 主模型写在正文里的指令没有. `{{ERA-issues}}` 只报告主模型写在正文里的指令
    * (`origin` 为 `'text'`、没有该字段) 和无法解析的块, 钩子追加的指令和钩子引起的拦截不报告
    */
@@ -221,7 +221,7 @@ declare namespace Era {
   };
 
   /**
-   * 同步后最新的变量 (非空时) 不符合已注册的变量结构; 同一聊天、同一组问题只触发一次 (ERA-Heron 1.7.0 起).
+   * 同步后最新的变量 (非空时) 不符合已注册的变量结构; 同一聊天、同一组问题只触发一次.
    * ERA 照常放行之后的修改, 可以用面板“诊断”页一键修复
    */
   type SchemaInvalidPayload = {
@@ -238,7 +238,7 @@ declare namespace Era {
     message_id: number;
     status: 'started' | 'retry' | 'done' | 'no_entries' | 'no_change' | 'aborted' | 'failed';
     problems?: string[];
-    /** 结束时才有: 不影响结果判定的告警 (条目过滤器、EJS 渲染等) (ERA-Heron 1.7.0 起) */
+    /** 结束时才有: 不影响结果判定的告警 (条目过滤器、EJS 渲染等) */
     warnings?: string[];
   };
 
@@ -268,7 +268,7 @@ declare namespace Era {
     problems: string[];
     /**
      * 不影响结果判定的告警: 条目过滤器出错、EJS 渲染出错或超时、模板调用了写函数、取不到目标楼之前的状态等
-     * (ERA-Heron 1.7.0 起)
+     *
      */
     warnings: string[];
   };
@@ -290,10 +290,10 @@ declare namespace Era {
       finishedAt: number;
       status: ExtraResultStatus;
       problems: string[];
-      /** 不影响结果判定的告警 (ERA-Heron 1.7.0 起) */
+      /** 不影响结果判定的告警 */
       warnings: string[];
     } | null;
-    /** 输出已写进这些楼 (MK) 的正文、但同步还没算完; 发送前等待会等它们 (ERA-Heron 1.7.0 起) */
+    /** 输出已写进这些楼 (MK) 的正文、但同步还没算完; 发送前等待会等它们 */
     pendingSync: string[];
   };
 
@@ -319,7 +319,7 @@ declare namespace Era {
     /** 目标楼的 MK */
     mk: string;
     /**
-     * 给谁选条目: `extra` 分步更新 (目标楼的状态), `plan` 正文前规划, `main` 主生成 (ERA-Heron 1.8 起, 最新的状态).
+     * 给谁选条目: `extra` 分步更新 (目标楼的状态), `plan` 正文前规划, `main` 主生成 (最新的状态).
      * 只想影响其中一种时按它判断, 其余返回 `undefined`
      */
     purpose: 'extra' | 'plan' | 'main';
@@ -398,7 +398,7 @@ declare namespace Era {
     commands: HookCommand[];
     /** 确定性随机数, 重算时序列相同 */
     random: () => number;
-    /** 确定性数学函数, 用法同 `Math` (ERA-Heron 1.7.0 起) */
+    /** 确定性数学函数, 用法同 `Math` */
     math: DetMath;
   };
 
@@ -424,9 +424,9 @@ declare namespace Era {
  * 旧版 ERA 没有该接口, 等待将永远不会结束.
  */
 declare const Era: {
-  /** ERA-Heron 的版本号, 例如 `'1.7.0'` (ERA-Heron 1.7.0 起; 更早的版本没有该字段, 判断版本请用 `era.ts` 的 `requireEra`) */
+  /** ERA-Heron 的版本号, 例如 `'2.0.0'` (更早的版本没有该字段, 判断版本请用 `era.ts` 的 `requireEra`) */
   version: string;
-  /** 当前版本提供的功能, 例如 `Era.features.includes('applyText')` (ERA-Heron 1.7.0 起) */
+  /** 当前版本提供的功能, 例如 `Era.features.includes('applyText')` */
   features: readonly string[];
   /**
    * 注册变量结构 schema, 重复注册会覆盖; 返回注销函数.
@@ -438,26 +438,26 @@ declare const Era: {
   /** 当前是否注册了 schema */
   hasSchema: () => boolean;
   /**
-   * 检查变量是否符合当前注册的变量结构, 只读 (ERA-Heron 1.7.0 起); `mk` 指定检查哪一楼处理完之后的变量, 默认是最新的.
+   * 检查变量是否符合当前注册的变量结构, 只读; `mk` 指定检查哪一楼处理完之后的变量, 默认是最新的.
    * 该楼的状态无法计算时 Promise 失败
    */
   checkSchema: (mk?: string) => Promise<Era.SchemaCheckResult>;
   /**
    * 指令解析后、执行前修改指令; 钩子必须是同步的、只依赖 `ctx` 的纯函数; 返回注销函数.
-   * 钩子里调用 `Era.commit`、`Era.applyText`、`Era.extra.run` / `wait` 或发出写入事件会让该钩子报错、修改被丢弃 (ERA-Heron 1.7.0 起)
+   * 钩子里调用 `Era.commit`、`Era.applyText`、`Era.extra.run` / `wait` 或发出写入事件会让该钩子报错、修改被丢弃
    */
   onBeforeApply: (id: string, hook: (ctx: Era.BeforeApplyContext) => void, options?: Era.HookOptions) => () => void;
   /**
    * 指令执行后修改变量; 钩子必须是同步的、只依赖 `ctx` 的纯函数; 返回注销函数. 参数无效时弹窗提示、不注册.
-   * 与 `onBeforeApply` 相同, 钩子里不能调用写入接口 (ERA-Heron 1.7.0 起)
+   * 与 `onBeforeApply` 相同, 钩子里不能调用写入接口
    */
   onAfterApply: (id: string, hook: (ctx: Era.AfterApplyContext) => void, options?: Era.HookOptions) => () => void;
-  /** 当前角色卡是否注册了该 id 的钩子; 省略 `phase` 时任一阶段都算 (ERA-Heron 1.6.0 起) */
+  /** 当前角色卡是否注册了该 id 的钩子; 省略 `phase` 时任一阶段都算 */
   hasHook: (id: string, phase?: 'before' | 'after') => boolean;
   /**
    * 注册条目过滤器: 按变量决定世界书条目发不发、发什么内容, 不改世界书文件. 分步更新按**目标楼**的状态,
-   * 正文前规划与主生成 (ERA-Heron 1.8 起, 每次生成加载世界书时) 按最新的状态; 用 `ctx.purpose` 区分.
-   * 在文件里的开关之前运行. 必须是同步的纯函数. 同名替换, 按名字顺序调用; 返回注销函数 (ERA-Heron 1.7.0 起)
+   * 正文前规划与主生成 (每次生成加载世界书时) 按最新的状态; 用 `ctx.purpose` 区分.
+   * 在文件里的开关之前运行. 必须是同步的纯函数. 同名替换, 按名字顺序调用; 返回注销函数
    * @example
    * Era.registerEntryFilter('我的卡.规则二选一', (entry, ctx) => {
    *   if (entry.name.includes('[和平]')) return ctx.stat.世界?.时代 !== '战争';
@@ -465,21 +465,21 @@ declare const Era: {
    * });
    */
   registerEntryFilter: (name: string, filter: Era.EntryFilter) => () => void;
-  /** 当前角色卡是否注册了该名字的条目过滤器 (ERA-Heron 1.7.0 起) */
+  /** 当前角色卡是否注册了该名字的条目过滤器 */
   hasEntryFilter: (name: string) => boolean;
   /**
-   * 注册工具 (ERA-Heron 1.8 起): AI 写 `<EraFCall name="工具名">{"参数": 1}</EraFCall>`, ERA 按位置调用 `handler`,
+   * 注册工具: AI 写 `<EraFCall name="工具名">{"参数": 1}</EraFCall>`, ERA 按位置调用 `handler`,
    * 它读到执行到这里时的变量, 返回普通的变量操作. 重算时重新执行. 返回注销函数
    */
   registerTool: (name: string, definition: Era.ToolDefinition) => () => void;
-  /** 当前角色卡是否注册了该名字的工具 (ERA-Heron 1.8 起) */
+  /** 当前角色卡是否注册了该名字的工具 */
   hasTool: (name: string) => boolean;
   /**
-   * 注册自定义公式函数 (ERA-Heron 1.8 起), 在 `$expr` 里调用, 例如 `伤害(roll(1, 6), 防御)`.
+   * 注册自定义公式函数, 在 `$expr` 里调用, 例如 `伤害(roll(1, 6), 防御)`.
    * 只接收数字、返回有限数字的同步纯函数; 不能与内置函数同名. 返回注销函数
    */
   registerExprFn: (name: string, fn: (...args: number[]) => number, options?: Era.ExprFnOptions) => () => void;
-  /** 当前角色卡是否注册了该名字的自定义公式函数 (ERA-Heron 1.8 起) */
+  /** 当前角色卡是否注册了该名字的自定义公式函数 */
   hasExprFn: (name: string) => boolean;
   /**
    * 按顺序提交一组写入, 在写入被计算之后完成; 不修改消息正文.
@@ -501,12 +501,12 @@ declare const Era: {
     options?: Era.SimulateOptions,
   ) => Promise<{ stat: any; problems: { path: string; reason: string }[] }>;
   /**
-   * 解析一段文本中的指令块, 不执行、不写入 (ERA-Heron 1.7.0 起). 解析方式与 AI 消息正文相同:
-   * 1.7 起新建的聊天中, 思考标签里的指令不算, 设置了指令外层标签时只认标签内的指令
+   * 解析一段文本中的指令块, 不执行、不写入. 解析方式与 AI 消息正文相同:
+   * 新建的聊天中, 思考标签里的指令不算, 设置了指令外层标签时只认标签内的指令
    */
   parseCommands: (text: string) => { commands: Era.ParsedCommand[]; problems: { path: string; reason: string }[] };
   /**
-   * 把一段文本中的指令应用到一楼, 不修改正文 (ERA-Heron 1.7.0 起). 指令保存为旁路写入, 按正文指令的规则执行
+   * 把一段文本中的指令应用到一楼, 不修改正文. 指令保存为旁路写入, 按正文指令的规则执行
    * (例如 `下划线只读` 会限制它们); 选项与 `commit` 相同, `atomic` 时有无法解析的块也全部放弃.
    * 文本中没有可以执行的指令时 Promise 失败
    * @example
@@ -515,14 +515,14 @@ declare const Era: {
    */
   applyText: (text: string, options?: Era.CommitOptions) => Promise<Era.WriteResult>;
   /**
-   * 前端改写楼层正文时保留 ERA 写在正文里的块 (ERA-Heron 1.7.0 起): 该楼的 MK (`<era_data>` 块, 丢失后该楼的旁路写入
+   * 前端改写楼层正文时保留 ERA 写在正文里的块: 该楼的 MK (`<era_data>` 块, 丢失后该楼的旁路写入
    * 会在下次完全同步时被清除), 以及分步更新写入的 `<era_extra>` 块 (丢失后额外模型写入的变量会回滚).
    * `from` 是原来的正文或楼层的消息 ID; `text` 已含某种块时不再补这种块
    * @example
    * await setChatMessages([{ message_id: 0, message: Era.keepMessageKey(newText, 0) }]);
    */
   keepMessageKey: (text: string, from: string | number) => string;
-  /** 确定性数学函数, 用法同 `Math`, 各浏览器逐位一致 (ERA-Heron 1.7.0 起) */
+  /** 确定性数学函数, 用法同 `Math`, 各浏览器逐位一致 */
   math: Era.DetMath;
   /** 当前注册的变量结构的文字说明, 没有注册时为空字符串; 宏为 `{{ERA-schema}}` */
   describeSchema: () => string;
@@ -534,24 +534,24 @@ declare const Era: {
     abort: (mk?: string) => void;
     /**
      * 等待正在进行的解析完成; 脚本自行触发生成 (如 `/trigger`) 之前可以先等待它.
-     * 1.7.0 起也等待已写进正文、但同步还没算完的输出 (见 `status().pendingSync`).
+     * 也等待已写进正文、但同步还没算完的输出 (见 `status().pendingSync`).
      * 返回 `false` 表示到了时限 (按重试次数、超时和写入计算) 或玩家点击提示框放弃了等待
      */
     wait: () => Promise<boolean>;
     /** 同步查询正在进行的解析和最近一次解析的结果 (含实际提示词与原始回复) */
     status: () => Era.ExtraStatusSnapshot;
     /**
-     * 正文前规划 (ERA-Heron 1.8 起): 按 `[era_plan]` 条目为一段玩家文字做规划, 返回追加了 `<era_plan>` 的文本, 不写入任何内容.
+     * 正文前规划: 按 `[era_plan]` 条目为一段玩家文字做规划, 返回追加了 `<era_plan>` 的文本, 不写入任何内容.
      * 脚本、快速回复自己发送消息时用它; 玩家点击发送时由分步更新设置“正文前规划”自动进行
      */
     plan: (text: string) => Promise<Era.PlanRunResult>;
-    /** 重新规划最新一条玩家消息, 替换其中的 `<era_plan>` (ERA-Heron 1.8 起). 出错时弹窗提示并返回 `null` */
+    /** 重新规划最新一条玩家消息, 替换其中的 `<era_plan>`. 出错时弹窗提示并返回 `null` */
     replan: () => Promise<Era.PlanRunResult | null>;
   };
   /** 同步获取当前最新变量 */
   getCurrentVars: () => { stat: any; statWithoutMeta: any };
   /**
-   * 某一楼处理完之后的变量, 让楼层状态栏显示“那一楼当时”的值; 只读 (ERA-Heron 1.6.0 起).
+   * 某一楼处理完之后的变量, 让楼层状态栏显示“那一楼当时”的值; 只读.
    * 楼层不存在、还没有计算到、或日志已折叠又没有存档时 Promise 失败
    * @example
    * const { statWithoutMeta } = await Era.getVarsAt(getCurrentMessageId());
