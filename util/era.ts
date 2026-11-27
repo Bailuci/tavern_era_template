@@ -6,7 +6,7 @@
  *       2026-11-26 新增 requireEra、compareEraVersions
  *       新增 registerEraEntryFilter
  *       2026-11-27 更正 getEraMath 的注释；新增 registerEraTool、registerEraExprFn
- * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 修改记录.md
+ * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 更新日志.md
  */
 import type { StoreDefinition } from 'pinia';
 import type { DeepReadonly } from 'vue';
