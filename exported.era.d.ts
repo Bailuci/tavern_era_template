@@ -27,7 +27,9 @@ declare namespace Era {
   };
 
   type ActionsTaken = {
+    /** 保留字段, 始终为 false */
     rollback: boolean;
+    /** 保留字段, 始终为 false */
     apply: boolean;
     resync: boolean;
     api: boolean;

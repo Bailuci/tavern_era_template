@@ -115,7 +115,7 @@ export const Schema = z.object({
 
 ## 第 4 步：世界书规则
 
-1. 在角色卡上导入并启用 ERA 脚本（酒馆助手角色脚本，内容为 `import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v2.0.2/artifact/bundle.js';`），在角色卡设置里**开启局部正则**，打开 ERA 面板（点悬浮球，或酒馆扩展菜单 → “ERA 面板”），在“工具”页点“**ERA 快速初始化**”（以 `初始模板/ERA角色卡/` 为起点时，`index.yaml` 已经写好 ERA 脚本、这两个条目和五条正则，不用再点）。它会：
+1. 在角色卡上导入并启用 ERA 脚本（酒馆助手角色脚本，内容为 `import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v2.0.3/artifact/bundle.js';`），在角色卡设置里**开启局部正则**，打开 ERA 面板（点悬浮球，或酒馆扩展菜单 → “ERA 面板”），在“工具”页点“**ERA 快速初始化**”（以 `初始模板/ERA角色卡/` 为起点时，`index.yaml` 已经写好 ERA 脚本、这两个条目和五条正则，不用再点）。它会：
    - 在角色主世界书里建两个条目：`ERA 变量操作规则`（教 AI 指令格式，一般不改）和 `ERA 变量意图说明`（由你填写）；
    - 在角色卡局部正则里建 `ERA 数据隐藏正则`、`ERA 元数据隐藏正则`、`ERA 思考块隐藏正则`、`ERA 状态栏模板`、`ERA 状态栏占位符隐藏正则`（只作用于提示词，去掉 `<StatusPlaceHolderImpl/>`）。
    - 已有的卡用“**更新旧卡的规则**”把规则条目和隐藏正则更新到当前版本（会备份原内容）。
