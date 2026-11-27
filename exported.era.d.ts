@@ -11,6 +11,7 @@
  *       2026-11-27 registerExprFn 不能注册名为 call 的函数
  *       2026-11-27 BeforeApplyContext 的 commands 注明可以改写（与实现一致）
  *       2026-11-27 Era.extra.status() 增加 history（最近几次分步更新与规划的请求记录）
+ *       2026-11-28 新增接口与钩子指令来源的类型
  * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 更新日志.md
  */
 declare namespace Era {
@@ -75,7 +76,18 @@ declare namespace Era {
    * 按数字处理指令的钩子要跳过它
    */
   /** `call` 是工具调用 `<EraFCall>`, `data` 为 `[{ name, args }]` */
-  type HookCommand = { type: 'insert' | 'edit' | 'delete' | 'patch' | 'call'; data: any[] };
+  type HookCommand = {
+    type: 'insert' | 'edit' | 'delete' | 'patch' | 'call';
+    data: any[];
+    /**
+     * 指令从哪里来 (只读, 改它没有效果): `text` 正文里的指令, `api` 旁路写入 (`Era.commit`、`Era.applyText`、写入事件),
+     * `hook` 钩子生成, `tool` 工具返回. 钩子自己新建的指令不用写.
+     * 只想限制模型写的指令时, 用 `command.origin === 'text'` 判断, 界面按钮的提交 (`api`) 就不会被一起改掉
+     */
+    origin?: 'text' | 'api' | 'hook' | 'tool';
+    /** 更细的来源: `extra` 是额外模型写进 `<era_extra>` 的指令, `api` 是旁路写入; 正文里的普通指令没有这一项 */
+    source?: string;
+  };
 
   /**
    * 确定性数学函数, 用法同 `Math`. 三角、指数、对数移植自 fdlibm, 各浏览器逐位一致;
@@ -547,12 +559,22 @@ declare const Era: {
   applyText: (text: string, options?: Era.CommitOptions) => Promise<Era.WriteResult>;
   /**
    * 前端改写楼层正文时保留 ERA 写在正文里的块: 该楼的 MK (`<era_data>` 块, 丢失后该楼的旁路写入
-   * 会在下次完全同步时被清除), 以及分步更新写入的 `<era_extra>` 块 (丢失后额外模型写入的变量会回滚).
-   * `from` 是原来的正文或楼层的消息 ID; `text` 已含某种块时不再补这种块
+   * 会在下次完全同步时被清除), 分步更新写入的 `<era_extra>` 块 (丢失后额外模型写入的变量会回滚),
+   * 以及正文前规划写在玩家消息里的 `<era_plan>` 块.
+   * 只补这三种 ERA 自己写的块: 原正文里 AI 或开场白写的指令块 (`<VariableInsert>` 等)、工具调用和状态栏占位符不会补回,
+   * 只改文字时要把它们原样带回, 否则这些指令的效果会在重算后消失.
+   * `from` 是原来的正文或楼层的消息 ID (楼层不存在时抛出错误); `text` 已含某种块时不再补这种块
    * @example
    * await setChatMessages([{ message_id: 0, message: Era.keepMessageKey(newText, 0) }]);
    */
   keepMessageKey: (text: string, from: string | number) => string;
+  /**
+   * 请求一次同步并等它完成, 相当于可以等待的 `era:forceSync`.
+   * 脚本删楼、切换 swipe (酒馆助手的 `deleteChatMessages`、`setChatMessages` 默认不通知 ERA) 之后调用, 再读变量或建下一楼.
+   * `mode`: `'auto'` (默认, 按聊天记录的变化决定重算范围)、`'latest'` (只重算最新一楼)、`'full'` (从第一楼完全重算).
+   * 返回 `true` 表示同步已经完成, `false` 表示到了时限还没有完成
+   */
+  sync: (mode?: 'auto' | 'latest' | 'full') => Promise<boolean>;
   /** 确定性数学函数, 用法同 `Math`, 各浏览器逐位一致 */
   math: Era.DetMath;
   /** 当前注册的变量结构的文字说明, 没有注册时为空字符串; 宏为 `{{ERA-schema}}` */
@@ -582,6 +604,20 @@ declare const Era: {
      * 脚本、快速回复自己发送消息时用它; 玩家点击发送时由分步更新设置“正文前规划”自动进行
      */
     plan: (text: string) => Promise<Era.PlanRunResult>;
+    /**
+     * 按自动触发的同样条件解析一楼: 没有开启分步更新、是玩家消息、正文自己带有指令时不请求, 返回 `null`.
+     * 自己建楼的前端在建好 AI 楼之后调用 (脚本建的楼不会触发自动解析); 成功和无变化时不弹提示.
+     * 找不到这一楼、这一楼还没有 MK 时 Promise 失败
+     */
+    autoRun: (where: Era.FloorRef) => Promise<Era.ExtraRunResult | null>;
+    /** 分步更新 (`update`) 与正文前规划 (`plan`) 当前实际生效的开关. 只读, 不含接口地址和密钥 */
+    settings: () => { update: boolean; plan: boolean };
+    /**
+     * 玩家消息里的规划对应的注入文字, 与原生发送时 ERA 注入给剧情模型的逐字相同; 没有规划时返回空字符串.
+     * 自己调用 `generate()` 的前端用它把结算结果告诉剧情模型 (`generate()` 不会自动注入).
+     * `from` 是玩家消息的正文, 或它的楼层号 (可以用负数从末尾倒数)
+     */
+    planInjection: (from: string | number) => string;
     /** 重新规划最新一条玩家消息, 替换其中的 `<era_plan>`. 出错时弹窗提示并返回 `null` */
     replan: () => Promise<Era.PlanRunResult | null>;
   };

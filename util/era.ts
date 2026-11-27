@@ -6,6 +6,7 @@
  *       2026-11-26 新增 requireEra、compareEraVersions
  *       新增 registerEraEntryFilter
  *       2026-11-27 更正 getEraMath 的注释；新增 registerEraTool、registerEraExprFn
+ *       2026-11-28 读取失败时取 error.message，不用 instanceof Error
  * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 更新日志.md
  */
 import type { StoreDefinition } from 'pinia';
@@ -211,7 +212,8 @@ export function defineEraDataStore<T extends z.ZodType<Record<string, any>>>(
         } catch (e) {
           // 例如这一楼还没有算完, 或日志已折叠又没有存档; 保留上一次的数据
           if (seq === request_seq) {
-            error.value = e instanceof Error ? e.message : String(e);
+            // 错误对象来自 ERA 脚本所在的窗口，instanceof Error 在这里不成立
+            error.value = String((e as any)?.message ?? e);
           }
         }
       }
