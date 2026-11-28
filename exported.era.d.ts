@@ -13,6 +13,8 @@
  *       2026-11-27 Era.extra.status() 增加 history（最近几次分步更新与规划的请求记录）
  *       2026-11-28 新增接口与钩子指令来源的类型
  *       2026-11-28 更正钩子指令 origin / source 的说明
+ *       2026-11-28 整理错位的注释
+ *       2026-11-28 来源标记统一为 api；指定楼层的参数统一
  * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 更新日志.md
  */
 declare namespace Era {
@@ -208,10 +210,10 @@ declare namespace Era {
 
   /**
    * 指令的来源标记, 只用于报告, 不影响规则: `'extra'` 分步更新写入的 `<era_extra>` 中额外模型的输出,
-   * `'apiOps'` 旁路写入 (含 `Era.applyText`). 主模型写在正文里的指令没有. `{{ERA-issues}}` 只报告主模型写在正文里的指令
+   * `'api'` 旁路写入 (含 `Era.applyText`). 主模型写在正文里的指令没有. `{{ERA-issues}}` 只报告主模型写在正文里的指令
    * (`origin` 为 `'text'`、没有该字段) 和无法解析的块, 钩子追加的指令和钩子引起的拦截不报告
    */
-  type CommandSource = 'extra' | 'apiOps';
+  type CommandSource = 'extra' | 'api';
 
   type CommandErrorPayload = {
     errors: {
@@ -266,7 +268,7 @@ declare namespace Era {
 
   type ExtraResultStatus = 'done' | 'no_entries' | 'no_change' | 'aborted' | 'failed';
 
-  /** `Era.extra.run()` 的结果 */
+  /** `Era.extra.plan()` / `Era.extra.replan()` 的结果 */
   type PlanRunResult = {
     /** `no_entries`: 卡里没有 `[era_plan]` 条目; `no_change`: 规划模型认为这一轮不需要结算 */
     status: 'done' | 'no_change' | 'no_entries' | 'failed' | 'aborted';
@@ -487,7 +489,7 @@ declare const Era: {
    * 检查变量是否符合当前注册的变量结构, 只读; `mk` 指定检查哪一楼处理完之后的变量, 默认是最新的.
    * 该楼的状态无法计算时 Promise 失败
    */
-  checkSchema: (mk?: string) => Promise<Era.SchemaCheckResult>;
+  checkSchema: (where?: Era.FloorRef) => Promise<Era.SchemaCheckResult>;
   /**
    * 指令解析后、执行前修改指令; 钩子必须是同步的、只依赖 `ctx` 的纯函数; 返回注销函数.
    * 钩子里调用 `Era.commit`、`Era.applyText`、`Era.extra.run` / `wait` 或发出写入事件会让该钩子报错、修改被丢弃
@@ -545,7 +547,7 @@ declare const Era: {
    */
   simulate: (
     text: string,
-    mk?: string,
+    where?: Era.FloorRef,
     options?: Era.SimulateOptions,
   ) => Promise<{ stat: any; problems: { path: string; reason: string }[] }>;
   /**
@@ -582,20 +584,20 @@ declare const Era: {
   sync: (mode?: 'auto' | 'latest' | 'full') => Promise<boolean>;
   /** 确定性数学函数, 用法同 `Math`, 各浏览器逐位一致 */
   math: Era.DetMath;
-  /** 当前注册的变量结构的文字说明, 没有注册时为空字符串; 宏为 `{{ERA-schema}}` */
   /**
-   * 改写一楼的正文并按新正文重新计算变量, 算完后返回; 自动保留 ERA 写在原正文里的块 (`<era_data>`、`<era_extra>`).
+   * 改写一楼的正文并按新正文重新计算变量, 算完后返回; 自动保留 ERA 写在原正文里的块 (`<era_data>`、`<era_extra>`、玩家消息里的 `<era_plan>`).
    * 用酒馆助手的 `setChatMessages` 改写正文时 ERA 不会自动重算, 用它就不需要自己再请求同步.
    * 只是写变量时不要改正文, 用 `Era.applyText` / `Era.commit`
    */
   setMessageText: (where: Era.FloorRef, text: string) => Promise<Era.WriteResult>;
+  /** 当前注册的变量结构的文字说明, 没有注册时为空字符串; 宏为 `{{ERA-schema}}` */
   describeSchema: () => string;
   /** 额外模型解析 */
   extra: {
     /** 重新解析指定 MK 的消息, 不指定时解析最后一条 AI 消息; 结束后返回结果, 找不到消息时 Promise 失败 */
-    run: (mk?: string) => Promise<Era.ExtraRunResult>;
+    run: (where?: Era.FloorRef) => Promise<Era.ExtraRunResult>;
     /** 取消正在进行的解析 */
-    abort: (mk?: string) => void;
+    abort: (where?: Era.FloorRef) => void;
     /**
      * 等待正在进行的解析完成; 脚本自行触发生成 (如 `/trigger`) 之前可以先等待它.
      * 也等待已写进正文、但同步还没算完的输出 (见 `status().pendingSync`).

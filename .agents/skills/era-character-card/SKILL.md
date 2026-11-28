@@ -116,7 +116,7 @@ export const Schema = z.object({
 
 ## 第 4 步：世界书规则
 
-1. 在角色卡上导入并启用 ERA 脚本（酒馆助手角色脚本，内容为 `import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v2.0.5/artifact/bundle.js';`），在角色卡设置里**开启局部正则**，打开 ERA 面板（点悬浮球，或酒馆扩展菜单 → “ERA 面板”），在“工具”页点“**ERA 快速初始化**”（以 `初始模板/ERA角色卡/` 为起点时，`index.yaml` 已经写好 ERA 脚本、这两个条目和五条正则，不用再点）。它会：
+1. 在角色卡上导入并启用 ERA 脚本（酒馆助手角色脚本，内容为 `import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v2.0.7/artifact/bundle.js';`），在角色卡设置里**开启局部正则**，打开 ERA 面板（点悬浮球，或酒馆扩展菜单 → “ERA 面板”），在“工具”页点“**ERA 快速初始化**”（以 `初始模板/ERA角色卡/` 为起点时，`index.yaml` 已经写好 ERA 脚本、这两个条目和五条正则，不用再点）。它会：
    - 在角色主世界书里建两个条目：`ERA 变量操作规则`（教 AI 指令格式，一般不改）和 `ERA 变量意图说明`（由你填写）；
    - 在角色卡局部正则里建 `ERA 数据隐藏正则`、`ERA 元数据隐藏正则`、`ERA 思考块隐藏正则`、`ERA 状态栏模板`、`ERA 状态栏占位符隐藏正则`（只作用于提示词，去掉 `<StatusPlaceHolderImpl/>`）。
    - 已有的卡用“**更新旧卡的规则**”把规则条目和隐藏正则更新到当前版本（会备份原内容）。
@@ -171,7 +171,7 @@ export const Schema = z.object({
 - **酒馆助手前端界面（vue）**：用 `util/era.ts`（`@util/era`）的 `defineEraDataStore(Schema)` 得到只读、已校验的最新变量 `data`。
 - **楼层里的状态栏**只监听 `era:writeDone` 时，每一楼都显示最新变量。想让旧楼显示“那一楼当时”的值，用 `defineEraFloorStore(Schema)` 或 `await Era.getVarsAt(getCurrentMessageId())`（每次 `era:writeDone` 后重新读取）；只想在最新一楼显示完整状态栏，用 `isLatestFloor()` 判断。见 `docs/era/05-接口与设置.md` 第 9 节。快速初始化生成的状态栏模板这样区分：最后一楼显示最新变量并监听 `era:writeDone`；旧楼只在加载时读一次那一楼当时的值、不再监听，长聊天里每次写入只刷新最后一楼（编辑、删除更早的楼层后，已显示的旧楼要重新渲染才更新）。改模板时保留这个区分，见 `docs/era/03-状态栏.md`。
 - 前端**写变量**：用 store 的 `commit` / `patch`，或直接 `await Era.commit([...], { atomic: true })`，失败时 Promise 会说明原因（例如金币不足被 schema 拒绝）；只能生效一次的操作传幂等键 `{ key: '…' }`。store 的 `update` / `insert` / `remove` 只为兼容旧版保留，拿不到结果，新代码不要用。频繁写入（滑块等）请做防抖。
-- **同层前端自己请求 AI 或改写正文**：执行回复文本里的指令用 `await Era.applyText(reply, { message_id, atomic, key })`（不改正文，存为旁路写入）；需要改写楼层正文并触发重算时用 `await Era.setMessageText(where, newText)`（自动保留 `<era_data>` 和 `<era_extra>`）；坚持用 `setChatMessages` 改写正文时，必须用 `Era.keepMessageKey(newText, from)` 保留这两个块并自行发 `era:forceSync`。多回合建议每回合建一条隐藏楼层，避免单楼旁路写入越积越慢，见 `docs/era/03-状态栏.md`。
+- **同层前端自己请求 AI 或改写正文**：执行回复文本里的指令用 `await Era.applyText(reply, { message_id, atomic, key })`（不改正文，存为旁路写入）；需要改写楼层正文并触发重算时用 `await Era.setMessageText(where, newText)`（自动保留 `<era_data>`、`<era_extra>` 和玩家消息里的 `<era_plan>`）；坚持用 `setChatMessages` 改写正文时，必须用 `Era.keepMessageKey(newText, from)` 保留这几个块并自行发 `era:forceSync`。多回合建议每回合建一条隐藏楼层，避免单楼旁路写入越积越慢，见 `docs/era/03-状态栏.md`。
 - **同层前端必读**：`docs/era/03-状态栏.md` 的“同层前端须知”和“改写正文时要自己带回的内容”。要点：`generate()` 不运行条目过滤器、不自动规划也不注入规划结算（用 `Era.extra.plan` 和 `Era.extra.planInjection`）；脚本建的楼不触发自动分步更新（用 `Era.extra.autoRun`）；脚本删楼、切 swipe 后先 `await Era.sync()`；改写正文时指令块要原样带回。
 - 前端自己发消息（`/send`、`/trigger`）之前先 `await Era.extra.wait()`，否则开启分步更新时，下一次生成可能还看不到最新变量。
 - 想显示“变量更新中”，监听 `era:extraStatus`；界面加载时先用 `Era.extra.status().running` 恢复，免得错过已经发出的 `started`。
