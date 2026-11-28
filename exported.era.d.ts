@@ -12,6 +12,7 @@
  *       2026-11-27 BeforeApplyContext 的 commands 注明可以改写（与实现一致）
  *       2026-11-27 Era.extra.status() 增加 history（最近几次分步更新与规划的请求记录）
  *       2026-11-28 新增接口与钩子指令来源的类型
+ *       2026-11-28 更正钩子指令 origin / source 的说明
  * 原项目：RockingSisyphus/ERA-EfficientRollbackArchitecture，修改记录见仓库根目录的 更新日志.md
  */
 declare namespace Era {
@@ -80,13 +81,17 @@ declare namespace Era {
     type: 'insert' | 'edit' | 'delete' | 'patch' | 'call';
     data: any[];
     /**
-     * 指令从哪里来 (只读, 改它没有效果): `text` 正文里的指令, `api` 旁路写入 (`Era.commit`、`Era.applyText`、写入事件),
-     * `hook` 钩子生成, `tool` 工具返回. 钩子自己新建的指令不用写.
-     * 只想限制模型写的指令时, 用 `command.origin === 'text'` 判断, 界面按钮的提交 (`api`) 就不会被一起改掉
+     * 这条指令按哪一类规则执行 (只读, 改它没有效果): `text` 按正文指令的规则 (受 `下划线只读` 限制),
+     * `api` 结构化的旁路写入 (`Era.commit`、开启“API写入不修改消息”时的写入事件), `hook` 钩子生成, `tool` 工具返回.
+     * 注意 `Era.applyText` 写入的指令按正文规则执行, 它的 `origin` 是 `text`; 区分“谁写的”请看 `source`
      */
     origin?: 'text' | 'api' | 'hook' | 'tool';
-    /** 更细的来源: `extra` 是额外模型写进 `<era_extra>` 的指令, `api` 是旁路写入; 正文里的普通指令没有这一项 */
-    source?: string;
+    /**
+     * 这条指令是谁写进来的 (只读): `api` 脚本或界面的旁路写入 (`Era.commit`、`Era.applyText`、不改正文的写入事件),
+     * `extra` 额外模型写进 `<era_extra>` 的指令; 正文里的指令 (AI、开场白, 以及默认设置下写入事件追加进正文的指令块) 没有这一项.
+     * 只想限制 AI 写的指令、放过界面按钮的提交时, 用 `if (command.source === 'api') continue;`
+     */
+    source?: 'api' | 'extra';
   };
 
   /**

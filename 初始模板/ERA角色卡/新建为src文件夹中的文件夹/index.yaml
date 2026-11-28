@@ -142,12 +142,12 @@
 
   酒馆助手:
     脚本库:
-      - 名称: ERA-Heron 2.0.4
+      - 名称: ERA-Heron 2.0.5
         id: 7a3c9e15-2b4d-4f8a-9c61-1d5e8f2a0b55
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v2.0.4/artifact/bundle.js';
+          import 'https://testingcf.jsdelivr.net/gh/Bailuci/ERA-Heron@v2.0.5/artifact/bundle.js';
 
       - 名称: 变量结构
         id: 3f8d1a62-9c4e-4b7d-8e25-6a0c3f9b1d66
